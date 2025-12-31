@@ -1,0 +1,45 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.code-workspace
+
+# Logs / temp
+*.log
+error_log
+tmp/
+cache/
+.cache/
+
+# Composer / PHP
+vendor/
+composer.phar
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env / secrets
+.env
+.env.*.local
+.env.local
+
+# User-generated uploads (stored outside of VCS)
+uploads/
+
+# Database dumps / local dbs / backups
+*.sql
+*.sqlite
+*.db
+backups/
+dump/
+
+# Local config (contains secrets)
+config.php
+
+# Se você usa arquivo de config com credenciais, ignore também:
+config.php
