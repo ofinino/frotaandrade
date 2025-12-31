@@ -358,7 +358,7 @@ $statusColors = [
                         <div class="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-600">
                             <div><span class="font-semibold">Veiculo:</span> <?= sanitize($run['vehicle_plate'] ?: '-') ?></div>
                             <div><span class="font-semibold">Designado:</span> <?= sanitize($run['assigned_name'] ?: '-') ?></div>
-                            <div><span class="font-semibold">Prazo:</span> <?= $run['prazo_em'] ? sanitize(date('d/m/Y H:i', strtotime($run['prazo_em']))) : '-' ?></div>
+                            <div><span class="font-semibold">Data termino:</span> <?= $run['finalizado_em'] ? sanitize(date('d/m/Y H:i', strtotime($run['finalizado_em']))) : '-' ?></div>
                             <div class="col-span-2 text-[11px] text-slate-500">Criado em <?= sanitize(date('d/m/Y H:i', strtotime($run['created_at']))) ?><?= $run['performer'] ? ' · Por ' . sanitize($run['performer']) : '' ?></div>
                         </div>
                         <div class="mt-3 flex flex-wrap gap-2">
@@ -382,7 +382,7 @@ $statusColors = [
                             <th class="py-2">Veiculo</th>
                             <th class="py-2">Designado</th>
                             <th class="py-2">Status</th>
-                            <th class="py-2">Prazo</th>
+                            <th class="py-2">Data termino</th>
                             <th class="py-2 text-right">Acoes</th>
                         </tr>
                     </thead>
@@ -404,7 +404,7 @@ $statusColors = [
                                 <?php endif; ?>
                             </td>
                             <td class="py-2 text-xs text-slate-600">
-                                <?= $run['prazo_em'] ? sanitize(date('d/m/Y H:i', strtotime($run['prazo_em']))) : '-' ?>
+                                <?= $run['finalizado_em'] ? sanitize(date('d/m/Y H:i', strtotime($run['finalizado_em']))) : '-' ?>
                             </td>
                             <td class="py-2 text-right space-x-2">
                                 <a class="text-amber-600" href="index.php?page=run_check&id=<?= $run['id'] ?>">Abrir</a>

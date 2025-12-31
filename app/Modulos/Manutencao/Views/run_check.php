@@ -391,7 +391,13 @@ async function submitRunForm() {
                 }
             }
         }
-        const resp = await fetch(window.location.href, { method: 'POST', body: formData });
+        const resp = await fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin',
+            redirect: 'follow'
+        });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
         if (resp.redirected) {
             window.location.href = resp.url;
             return;
@@ -402,22 +408,54 @@ async function submitRunForm() {
         document.close();
     } catch (e) {
         console.error(e);
-        alert('Erro ao salvar. Tente novamente.');
+        // Fallback: tenta submit normal do form
+        try {
+            form.submit();
+        } catch (_) {
+            alert('Erro ao salvar. Tente novamente.');
+        }
     }
 }
 
 function compressImage(file, maxW, maxH, quality) {
-    return new Promise((resolve) => {
+    return new Promise(async (resolve) => {
+        const orientation = await getExifOrientation(file);
         const img = new Image();
         img.onload = () => {
-            const ratio = Math.min(maxW / Math.max(img.width, 1), maxH / Math.max(img.height, 1), 1);
-            const w = Math.max(1, Math.floor(img.width * ratio));
-            const h = Math.max(1, Math.floor(img.height * ratio));
+            let srcW = Math.max(img.width, 1);
+            let srcH = Math.max(img.height, 1);
+            const rotate90 = orientation === 6 || orientation === 8;
+            const targetW = rotate90 ? srcH : srcW;
+            const targetH = rotate90 ? srcW : srcH;
+            const ratio = Math.min(maxW / targetW, maxH / targetH, 1);
+            const drawW = Math.max(1, Math.floor(srcW * ratio));
+            const drawH = Math.max(1, Math.floor(srcH * ratio));
             const canvas = document.createElement('canvas');
-            canvas.width = w;
-            canvas.height = h;
+            if (rotate90) {
+                canvas.width = drawH;
+                canvas.height = drawW;
+            } else {
+                canvas.width = drawW;
+                canvas.height = drawH;
+            }
             const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, w, h);
+            switch (orientation) {
+                case 3:
+                    ctx.translate(canvas.width, canvas.height);
+                    ctx.rotate(Math.PI);
+                    break;
+                case 6: // 90 CW
+                    ctx.translate(canvas.width, 0);
+                    ctx.rotate(Math.PI / 2);
+                    break;
+                case 8: // 90 CCW
+                    ctx.translate(0, canvas.height);
+                    ctx.rotate(-Math.PI / 2);
+                    break;
+                default:
+                    break;
+            }
+            ctx.drawImage(img, 0, 0, drawW, drawH);
             canvas.toBlob(
                 (blob) => resolve(blob),
                 'image/jpeg',
@@ -426,6 +464,49 @@ function compressImage(file, maxW, maxH, quality) {
         };
         img.onerror = () => resolve(null);
         img.src = URL.createObjectURL(file);
+    });
+}
+
+function getExifOrientation(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const view = new DataView(e.target.result);
+            if (view.getUint16(0, false) !== 0xFFD8) {
+                resolve(1);
+                return;
+            }
+            let offset = 2;
+            const length = view.byteLength;
+            while (offset < length) {
+                const marker = view.getUint16(offset, false);
+                offset += 2;
+                if (marker === 0xFFE1) {
+                    offset += 2; // length
+                    if (view.getUint32(offset, false) !== 0x45786966) {
+                        break;
+                    }
+                    const little = view.getUint16(offset + 6, false) === 0x4949;
+                    const dirStart = offset + view.getUint32(offset + 10, little);
+                    const entries = view.getUint16(dirStart, little);
+                    for (let i = 0; i < entries; i++) {
+                        const entryOffset = dirStart + 2 + i * 12;
+                        if (view.getUint16(entryOffset, little) === 0x0112) {
+                            const value = view.getUint16(entryOffset + 8, little);
+                            resolve(value);
+                            return;
+                        }
+                    }
+                } else if ((marker & 0xFF00) !== 0xFF00) {
+                    break;
+                } else {
+                    offset += view.getUint16(offset, false);
+                }
+            }
+            resolve(1);
+        };
+        reader.onerror = () => resolve(1);
+        reader.readAsArrayBuffer(file.slice(0, 128 * 1024));
     });
 }
 </script>
