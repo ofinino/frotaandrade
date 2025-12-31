@@ -166,6 +166,7 @@ if (!$run) {
 const requiredObsMsg = 'Para marcacao "Nao Conforme" e obrigatorio informar uma observacao.';
 const READ_ONLY = <?= $readOnly ? 'true' : 'false' ?>;
 let sigPads = {};
+const CLIENT_PHOTO_MAX = { w: 800, h: 800, quality: 0.6 };
 
 function syncFieldValue(fieldId) {
     const statusEl = document.querySelector('input[name="status_' + fieldId + '"]:checked');
@@ -258,9 +259,7 @@ function setActionAndSubmit(action) {
     const field = document.getElementById('action-field');
     field.value = action;
     if (!validateForm(action)) return;
-    if (action !== 'concluir') {
-        document.getElementById('run-form').submit();
-    }
+    submitRunForm();
 }
 
 function openSignatureModal() {
@@ -283,7 +282,7 @@ function finalizeConclude() {
         return;
     }
     document.getElementById('action-field').value = 'concluir';
-    document.getElementById('run-form').submit();
+    submitRunForm();
 }
 
 function toggleObs(fieldId, statusVal) {
@@ -363,5 +362,70 @@ function deleteMedia(id) {
             alert('Nao foi possivel remover o anexo.');
         }
     }).catch(() => alert('Erro ao remover anexo.'));
+}
+
+async function submitRunForm() {
+    if (READ_ONLY) return;
+    const form = document.getElementById('run-form');
+    if (!form) return;
+    try {
+        const formData = new FormData();
+        // Campos que nao sao arquivos
+        const raw = new FormData(form);
+        raw.forEach((value, key) => {
+            if (!(value instanceof File)) {
+                formData.append(key, value);
+            }
+        });
+        // Arquivos (com compressao de imagem no cliente)
+        const inputs = form.querySelectorAll('.media-input');
+        for (const input of inputs) {
+            const name = input.name;
+            const files = input.files ? Array.from(input.files) : [];
+            for (const file of files) {
+                if (file && file.type && file.type.startsWith('image/')) {
+                    const compressed = await compressImage(file, CLIENT_PHOTO_MAX.w, CLIENT_PHOTO_MAX.h, CLIENT_PHOTO_MAX.quality);
+                    formData.append(name, compressed || file, file.name);
+                } else if (file) {
+                    formData.append(name, file, file.name);
+                }
+            }
+        }
+        const resp = await fetch(window.location.href, { method: 'POST', body: formData });
+        if (resp.redirected) {
+            window.location.href = resp.url;
+            return;
+        }
+        const html = await resp.text();
+        document.open();
+        document.write(html);
+        document.close();
+    } catch (e) {
+        console.error(e);
+        alert('Erro ao salvar. Tente novamente.');
+    }
+}
+
+function compressImage(file, maxW, maxH, quality) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            const ratio = Math.min(maxW / Math.max(img.width, 1), maxH / Math.max(img.height, 1), 1);
+            const w = Math.max(1, Math.floor(img.width * ratio));
+            const h = Math.max(1, Math.floor(img.height * ratio));
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            canvas.toBlob(
+                (blob) => resolve(blob),
+                'image/jpeg',
+                quality
+            );
+        };
+        img.onerror = () => resolve(null);
+        img.src = URL.createObjectURL(file);
+    });
 }
 </script>
