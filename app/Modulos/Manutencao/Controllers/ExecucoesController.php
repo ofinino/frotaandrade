@@ -287,9 +287,9 @@ class ExecucoesController
         $allowedPhoto = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
         $allowedVideo = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska'];
         $maxPhotoPerField = 3;
-        $maxUploadBytes = 5 * 1024 * 1024; // 5MB por arquivo antes/depois da compress????o
-        $maxPhotoWidth = 640;
-        $maxPhotoHeight = 640;
+        $maxUploadBytes = (int) (1.5 * 1024 * 1024); // alvo ~1.5MB por arquivo apos compressao
+        $maxPhotoWidth = 800;
+        $maxPhotoHeight = 800;
         $gdAvailable = extension_loaded('gd');
         $action = $_POST['action'] ?? 'continuar';
         $status = $run['status'] ?: 'pendente';
@@ -552,20 +552,13 @@ class ExecucoesController
         }
         // Corrige orientacao com base no EXIF quando disponivel
         $src = $this->applyExifOrientation($src, $tmp, $w, $h);
-        // Corrige orientacao com base no EXIF quando disponivel
-        $src = $this->applyExifOrientation($src, $tmp, $w, $h);
-        // Se imagem j? ? pequena e sem rota??o, apenas copia
-        if ($w <= $maxW && $h <= $maxH) {
-            imagedestroy($src);
-            return $this->moveUploadedFile($tmp, $dest);
-        }
-
+        // Reprocessa sempre para comprimir e padronizar
         $ratio = min($maxW / max($w, 1), $maxH / max($h, 1), 1);
         $newW = max(1, (int) floor($w * $ratio));
         $newH = max(1, (int) floor($h * $ratio));
         $canvas = imagecreatetruecolor($newW, $newH);
         imagecopyresampled($canvas, $src, 0, 0, 0, 0, $newW, $newH, $w, $h);
-        $ok = imagejpeg($canvas, $dest, 70);
+        $ok = imagejpeg($canvas, $dest, 60);
         imagedestroy($canvas);
         imagedestroy($src);
         if (!$ok) {
