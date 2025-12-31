@@ -3,7 +3,7 @@ $run = $run ?? null;
 $fields = $fields ?? [];
 $answers = $answers ?? [];
 $mediaByField = $mediaByField ?? [];
-$readOnly = $readOnly ?? false; // concluido e não admin
+$readOnly = $readOnly ?? false; // concluido e nao admin
 $statusLabels = $statusLabels ?? [
     'pendente' => 'Pendente',
     'em_andamento' => 'Em andamento',
@@ -12,7 +12,7 @@ $statusLabels = $statusLabels ?? [
     'concluido' => 'Concluido',
 ];
 if (!$run) {
-    echo '<p>Execucao não encontrada.</p>';
+    echo '<p>Execucao nao encontrada.</p>';
     return;
 }
 ?>
@@ -39,7 +39,7 @@ if (!$run) {
         </div>
         <div class="flex flex-col items-end gap-2 text-xs text-slate-500">
             <div>Criado em <?= sanitize(date('d/m/Y H:i', strtotime($run['created_at']))) ?></div>
-            <a class="text-amber-600" href="index.php?page=report&id=<?= (int)$run['id'] ?>" target="_blank">Gerar relatorio</a>
+            <a class="text-sky-600" href="index.php?page=report&id=<?= (int)$run['id'] ?>" target="_blank">Gerar relatorio</a>
         </div>
     </div>
 
@@ -56,7 +56,7 @@ if (!$run) {
             $decoded = json_decode($raw, true);
             $statusVal = is_array($decoded) && isset($decoded['status']) ? $decoded['status'] : $raw;
             $obsVal = is_array($decoded) && isset($decoded['obs']) ? $decoded['obs'] : '';
-            $statusVal = in_array($statusVal, ['conforme','não_conforme','não_se_aplica'], true) ? $statusVal : '';
+            $statusVal = in_array($statusVal, ['conforme','nao_conforme','nao_se_aplica'], true) ? $statusVal : '';
             ?>
             <div class="border-2 border-slate-300 rounded-lg p-4 bg-slate-50 shadow-sm run-card">
                 <div class="font-semibold text-slate-900 text-lg leading-snug">
@@ -68,8 +68,8 @@ if (!$run) {
                         <?php
                         $optionsRadio = [
                             ['value' => 'conforme', 'label' => 'Conforme', 'color' => 'text-emerald-600'],
-                            ['value' => 'não_conforme', 'label' => 'Não conforme', 'color' => 'text-rose-700'],
-                            ['value' => 'não_se_aplica', 'label' => 'Não se aplica', 'color' => 'text-amber-700'],
+                            ['value' => 'nao_conforme', 'label' => 'Nao conforme', 'color' => 'text-rose-700'],
+                            ['value' => 'nao_se_aplica', 'label' => 'Nao se aplica', 'color' => 'text-sky-700'],
                         ];
                         foreach ($optionsRadio as $opt):
                         ?>
@@ -81,12 +81,12 @@ if (!$run) {
                     </div>
                     <div class="space-y-1">
                         <label class="flex items-center gap-2 text-sm text-slate-700">
-                            <span>Observacao (obrigatoria em "Não conforme")</span>
+                            <span>Observacao (obrigatoria em "Nao conforme")</span>
                         </label>
-                        <textarea class="w-full border border-slate-200 rounded px-3 py-2" rows="2" id="obs_<?= $fieldId ?>" name="obs_<?= $fieldId ?>" placeholder="Descreva a não conformidade" oninput="syncFieldValue(<?= $fieldId ?>)" <?= $readOnly ? 'disabled' : '' ?>><?= sanitize($obsVal) ?></textarea>
+                        <textarea class="w-full border border-slate-200 rounded px-3 py-2" rows="2" id="obs_<?= $fieldId ?>" name="obs_<?= $fieldId ?>" placeholder="Descreva a nao conformidade" oninput="syncFieldValue(<?= $fieldId ?>)" <?= $readOnly ? 'disabled' : '' ?>><?= sanitize($obsVal) ?></textarea>
                     </div>
                     <div class="space-y-2">
-                        <label class="block text-xs text-slate-600">Anexar foto/vídeo (até 3 por item)</label>
+                        <label class="block text-xs text-slate-600">Anexar foto/video (ate 3 por item)</label>
                         <div id="media-wrapper-<?= $fieldId ?>" class="space-y-1">
                             <input type="file" name="media_<?= $fieldId ?>[]" accept="image/*,video/*" capture="environment" multiple class="block w-full text-sm media-input" data-field="<?= $fieldId ?>" <?= $readOnly ? 'disabled' : '' ?> />
                         </div>
@@ -109,7 +109,7 @@ if (!$run) {
                                             <video controls class="w-full h-32 rounded">
                                                 <source src="<?= $mediaUrl ?>" />
                                             </video>
-                                            <a class="text-xs text-amber-600 block" href="<?= $mediaUrl ?>" target="_blank" rel="noopener noreferrer">Abrir v??deo</a>
+                                            <a class="text-xs text-sky-600 block" href="<?= $mediaUrl ?>" target="_blank" rel="noopener noreferrer">Abrir video</a>
                                         <?php endif; ?>
                                         <div class="text-[11px] text-slate-500 truncate"><?= sanitize($media['original_name']) ?></div>
                                         <?php if (!$readOnly): ?>
@@ -127,7 +127,7 @@ if (!$run) {
         <?php if (!$readOnly): ?>
             <div class="flex flex-col sm:flex-row gap-2 justify-end">
                 <button type="button" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold px-5 py-2 rounded" onclick="setActionAndSubmit('pausar')">Pausar</button>
-                <button type="button" class="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-5 py-2 rounded" onclick="setActionAndSubmit('continuar')">Salvar e continuar</button>
+                <button type="button" class="bg-sky-600 hover:bg-sky-700 text-white font-semibold px-5 py-2 rounded" onclick="setActionAndSubmit('continuar')">Salvar e continuar</button>
                 <button type="button" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-5 py-2 rounded" onclick="openSignatureModal()">Concluir</button>
             </div>
         <?php endif; ?>
@@ -144,7 +144,7 @@ if (!$run) {
         <p class="text-sm text-slate-600">Executante assina para concluir.</p>
         <div class="flex-1 overflow-y-auto space-y-4">
             <div>
-                <div class="text-sm text-slate-700 mb-1">Assinatura Executante (obrigat?ria)</div>
+                <div class="text-sm text-slate-700 mb-1">Assinatura Executante (obrigatoria)</div>
                 <div class="border border-slate-300 rounded bg-white p-2">
                     <canvas id="sig_auditor" width="400" height="200" style="touch-action:none; width:100%; max-width:400px; height:200px;"></canvas>
                 </div>
@@ -163,7 +163,7 @@ if (!$run) {
 <?php endif; ?>
 
 <script>
-const requiredObsMsg = 'Para marcaA?A?o "NA?o Conforme" A? obrigatA?rio informar uma observaA?A?o.';
+const requiredObsMsg = 'Para marcacao "Nao Conforme" e obrigatorio informar uma observacao.';
 const READ_ONLY = <?= $readOnly ? 'true' : 'false' ?>;
 let sigPads = {};
 
@@ -185,7 +185,7 @@ function validateForm(action) {
         const id = el.id.replace('field_hidden_', '');
         syncFieldValue(id);
         const val = el.value ? JSON.parse(el.value) : {};
-        if (val.status === 'não_conforme' && (!val.obs || val.obs.trim() === '')) {
+        if (val.status === 'nao_conforme' && (!val.obs || val.obs.trim() === '')) {
             valid = false;
         }
     });
@@ -208,7 +208,6 @@ function initSignatureCanvas() {
     if (sigPads['auditor']) return;
     const canvas = document.getElementById('sig_auditor');
     if (!canvas) return;
-    // tamanho fixo para garantir A?rea de desenho
     canvas.width = 400;
     canvas.height = 200;
     const ctx = canvas.getContext('2d');
@@ -280,7 +279,7 @@ function closeSignatureModal() {
 
 function finalizeConclude() {
     if (!exportSignatures(true)) {
-        alert('Assinatura do Executante A? obrigatA?ria para concluir.');
+        alert('Assinatura do Executante e obrigatoria para concluir.');
         return;
     }
     document.getElementById('action-field').value = 'concluir';
@@ -291,7 +290,7 @@ function toggleObs(fieldId, statusVal) {
     if (READ_ONLY) return;
     const obsEl = document.getElementById('obs_' + fieldId);
     if (!obsEl) return;
-    if (statusVal === 'não_conforme') {
+    if (statusVal === 'nao_conforme') {
         obsEl.removeAttribute('disabled');
         obsEl.classList.remove('bg-slate-100');
     } else {
@@ -361,14 +360,8 @@ function deleteMedia(id) {
             const el = document.getElementById('media-box-' + id);
             if (el) el.remove();
         } else {
-            alert('NA?o foi possA?vel remover o anexo.');
+            alert('Nao foi possivel remover o anexo.');
         }
     }).catch(() => alert('Erro ao remover anexo.'));
 }
 </script>
-
-
-
-
-
-

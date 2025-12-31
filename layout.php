@@ -404,6 +404,13 @@ function render_header(string $title = 'Painel'): void
             .main-shell.page-dark #page-theme-knob { background-color: #f8fafc; transform: translateX(20px) !important; }
             html[data-page-theme="light"] .main-shell #page-theme-switch { background-color: #e2e8f0 !important; border-color: #cbd5e1 !important; }
             html[data-page-theme="light"] .main-shell #page-theme-knob { transform: translateX(0) !important; }
+            /* Tema primario azul (override amber) */
+            :root { --primary: #0284c7; --primary-dark: #0369a1; }
+            .text-amber-600, .text-amber-700 { color: var(--primary) !important; }
+            .bg-amber-500, .bg-amber-600 { background-color: var(--primary) !important; }
+            .bg-amber-500:hover, .bg-amber-600:hover,
+            .hover\:bg-amber-600:hover { background-color: var(--primary-dark) !important; }
+            .focus\:ring-amber-400:focus { --tw-ring-color: var(--primary) !important; }
         </style>
         <title><?= sanitize($title ?: $appName) ?></title>
     </head>

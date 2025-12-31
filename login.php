@@ -73,9 +73,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://cdn.tailwindcss.com"></script>
     <title>Login</title>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center px-4">
-    <div class="w-full max-w-md bg-white/90 backdrop-blur shadow-xl rounded-lg p-8 space-y-6">
-        <div class="text-center">
+<body class="min-h-screen bg-gradient-to-br from-sky-900 via-sky-800 to-sky-900 flex items-center justify-center px-4">
+    <div class="w-full max-w-md bg-white shadow-xl rounded-lg p-8 space-y-6">
+        <div class="text-center space-y-1">
             <div class="text-2xl font-semibold text-slate-900">Checklist de Veículos</div>
             <p class="text-sm text-slate-500">Acesse para gerenciar frota e checklists</p>
         </div>
@@ -88,13 +88,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="post" class="space-y-4">
             <div>
                 <label class="block text-sm text-slate-600 mb-1">Email</label>
-                <input type="email" name="email" required class="w-full rounded border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-amber-400 focus:outline-none" />
+                <input type="email" name="email" required class="w-full rounded border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
             </div>
             <div>
                 <label class="block text-sm text-slate-600 mb-1">Senha</label>
-                <input type="password" name="password" required class="w-full rounded border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-amber-400 focus:outline-none" />
+                <input type="password" name="password" required class="w-full rounded border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
             </div>
-            <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2 rounded">Entrar</button>
+            <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold px-4 py-2 rounded">Entrar</button>
         </form>
         <p class="text-xs text-slate-500 text-center">Crie um usuário admin diretamente no banco caso ainda não exista.</p>
     </div>
