@@ -151,7 +151,8 @@ class ExecucoesController
         ];
 
         try {
-            $mostrarSomenteNaoConcluido = false; // permitir ver conclu??dos mesmo para executante
+            // Executante nao deve ver concluidos
+            $mostrarSomenteNaoConcluido = ($role === 'executante');
             $runs = $this->execModel->listarExecutoes($user['id'], $role, $mostrarSomenteNaoConcluido, $filters);
             $templates = $this->execModel->listarTemplates();
             if ($editingRun) {
@@ -287,8 +288,8 @@ class ExecucoesController
         $allowedVideo = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska'];
         $maxPhotoPerField = 3;
         $maxUploadBytes = 5 * 1024 * 1024; // 5MB por arquivo antes/depois da compress????o
-        $maxPhotoWidth = 1024;
-        $maxPhotoHeight = 1024;
+        $maxPhotoWidth = 640;
+        $maxPhotoHeight = 640;
         $gdAvailable = extension_loaded('gd');
         $action = $_POST['action'] ?? 'continuar';
         $status = $run['status'] ?: 'pendente';
@@ -551,14 +552,20 @@ class ExecucoesController
         }
         // Corrige orientacao com base no EXIF quando disponivel
         $src = $this->applyExifOrientation($src, $tmp, $w, $h);
-        // Recorte quadrado central
-        $side = min($w, $h);
-        $srcX = (int) max(0, ($w - $side) / 2);
-        $srcY = (int) max(0, ($h - $side) / 2);
-        $targetSide = min($side, min($maxW, $maxH));
-        $canvas = imagecreatetruecolor($targetSide, $targetSide);
-        imagecopyresampled($canvas, $src, 0, 0, $srcX, $srcY, $targetSide, $targetSide, $side, $side);
-        $ok = imagejpeg($canvas, $dest, 80);
+        // Corrige orientacao com base no EXIF quando disponivel
+        $src = $this->applyExifOrientation($src, $tmp, $w, $h);
+        // Se imagem j? ? pequena e sem rota??o, apenas copia
+        if ($w <= $maxW && $h <= $maxH) {
+            imagedestroy($src);
+            return $this->moveUploadedFile($tmp, $dest);
+        }
+
+        $ratio = min($maxW / max($w, 1), $maxH / max($h, 1), 1);
+        $newW = max(1, (int) floor($w * $ratio));
+        $newH = max(1, (int) floor($h * $ratio));
+        $canvas = imagecreatetruecolor($newW, $newH);
+        imagecopyresampled($canvas, $src, 0, 0, 0, 0, $newW, $newH, $w, $h);
+        $ok = imagejpeg($canvas, $dest, 70);
         imagedestroy($canvas);
         imagedestroy($src);
         if (!$ok) {
@@ -569,6 +576,7 @@ class ExecucoesController
             return false;
         }
         return true;
+
     }
 
     private function applyExifOrientation($src, string $filePath, int &$w, int &$h)
@@ -622,8 +630,4 @@ class ExecucoesController
         return $moved;
     }
 }
-
-
-
-
 

@@ -582,15 +582,16 @@ function render_header(string $title = 'Painel'): void
                     </button>
                     <?php if ($user): ?>
                         <div class="relative flex items-center gap-2">
-                            <div class="text-right leading-tight">
-                                <div class="font-semibold text-slate-800"><?= sanitize($user['name']) ?></div>
-                                <div class="text-slate-500 text-xs"><?= sanitize(format_role($user['role'])) ?></div>
-                            </div>
-                            <button id="user-menu-trigger" class="flex items-center gap-2 text-xs sm:text-sm text-slate-600 px-2 py-1 rounded hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400" type="button" aria-haspopup="true" aria-expanded="false">
+                            <button id="user-menu-trigger" class="flex items-center gap-2 text-xs sm:text-sm text-slate-700 px-2 py-1 rounded hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400" type="button" aria-haspopup="true" aria-expanded="false">
+                                <div class="text-right leading-tight">
+                                    <div class="font-semibold text-slate-800"><?= sanitize($user['name']) ?></div>
+                                    <div class="text-slate-500 text-xs"><?= sanitize(format_role($user['role'])) ?></div>
+                                </div>
                                 <?php if (!empty($company['logo_url'])): ?>
                                     <img src="<?= sanitize($company['logo_url']) ?>" alt="logo" class="h-8 w-8 object-contain rounded bg-white border border-slate-200">
+                                <?php else: ?>
+                                    <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-sky-600 text-white font-semibold"><?= strtoupper(substr(sanitize($user['name']),0,1)) ?></span>
                                 <?php endif; ?>
-                                <span class="sr-only">Menu do usuario</span>
                             </button>
                             <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg text-sm z-50">
                                 <a href="change_password.php" class="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 border-b border-slate-100">Alterar senha</a>
