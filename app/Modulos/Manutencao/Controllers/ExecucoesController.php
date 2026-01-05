@@ -286,7 +286,8 @@ class ExecucoesController
         $user = current_user();
         $allowedPhoto = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
         $allowedVideo = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska'];
-        $maxPhotoPerField = 3;
+        // Limite de fotos por campo
+        $maxPhotoPerField = 4;
         $maxUploadBytes = (int) (1.5 * 1024 * 1024); // alvo ~1.5MB por arquivo apos compressao
         $maxPhotoWidth = 800;
         $maxPhotoHeight = 800;
@@ -475,6 +476,9 @@ class ExecucoesController
             'tempo_execucao_segundos' => $tempo,
             'executando_desde' => $executandoDesde,
         ]);
+        // Gera SS para itens nao conformes desta execucao
+        (new \App\Modulos\Manutencao\Models\SolicitacoesServicoModel($this->db, current_company_id(), current_branch_id(), current_branch_ids()))
+            ->criarSSNaoConformePorExecucao($execId, $user['id'] ?? null);
 
         $msg = 'Respostas salvas.';
         if ($skippedPhotos > 0) {
@@ -623,4 +627,3 @@ class ExecucoesController
         return $moved;
     }
 }
-

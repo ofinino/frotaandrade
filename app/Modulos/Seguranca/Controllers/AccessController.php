@@ -164,6 +164,12 @@ class AccessController
             ['key' => 'company.view', 'label' => 'Empresa'],
             ['key' => 'branches.view', 'label' => 'Filiais'],
             ['key' => 'access.view', 'label' => 'Acessos'],
+            ['key' => 'ss.view', 'label' => 'SS - Ver'],
+            ['key' => 'ss.manage', 'label' => 'SS - Gerenciar'],
+            ['key' => 'os.view', 'label' => 'OS - Ver'],
+            ['key' => 'os.manage', 'label' => 'OS - Gerenciar'],
+            ['key' => 'preventiva.view', 'label' => 'Preventiva - Ver'],
+            ['key' => 'preventiva.manage', 'label' => 'Preventiva - Gerenciar'],
         ];
     }
 }

@@ -94,8 +94,10 @@ if ($sigRelPath) {
         .logo { max-height: 60px; }
         .title { font-size: 20px; font-weight: 700; }
         .subtitle { color:#475569; font-size:13px; }
-        .meta-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:8px; margin-bottom:12px; }
-        .meta-box { background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px; font-size:12px;}
+        .meta-grid { display:grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:12px; }
+        .meta-box { background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px; font-size:12px; display:flex; flex-direction:column; gap:2px;}
+        .meta-label { font-weight:700; color:#0f172a; }
+        .meta-value { color:#334155; }
         table { width:100%; border-collapse: collapse; margin-top:12px; }
         th, td { border:1px solid #e2e8f0; padding:8px; font-size:13px; vertical-align: top;}
         th { background:#f1f5f9; text-align:left; }
@@ -120,14 +122,38 @@ if ($sigRelPath) {
     </div>
     <h2 style="margin:4px 0;">Relatorio de Execucao</h2>
     <div class="meta-grid">
-        <div class="meta-box"><strong>Checklist:</strong> <?= sanitize($run['title'] ?: ('#'.$run['id'])) ?></div>
-        <div class="meta-box"><strong>Executante:</strong> <?= sanitize($run['assigned_name'] ?: $run['performer'] ?: '-') ?></div>
-        <div class="meta-box"><strong>Status:</strong> <?= sanitize($run['status']) ?></div>
-        <div class="meta-box"><strong>Veiculo:</strong> <?= sanitize(trim(($run['vehicle_plate'] ?? '') . ' ' . ($run['vehicle_model'] ?? ''))) ?: '-' ?></div>
-        <div class="meta-box"><strong>Data inicio:</strong> <?= sanitize(formatDateTime($run['iniciado_em'] ?: $run['created_at'])) ?></div>
-        <div class="meta-box"><strong>Data termino:</strong> <?= sanitize(formatDateTime($run['finalizado_em'])) ?></div>
-        <div class="meta-box"><strong>Prazo:</strong> <?= sanitize(formatDateTime($run['prazo_em'])) ?></div>
-        <div class="meta-box"><strong>Tempo de execucao:</strong> <?= sanitize($tempoFormatado) ?></div>
+        <div class="meta-box">
+            <div class="meta-label">Checklist</div>
+            <div class="meta-value"><?= sanitize($run['title'] ?: ('#'.$run['id'])) ?></div>
+        </div>
+        <div class="meta-box">
+            <div class="meta-label">Executante</div>
+            <div class="meta-value"><?= sanitize($run['assigned_name'] ?: $run['performer'] ?: '-') ?></div>
+        </div>
+        <div class="meta-box">
+            <div class="meta-label">Status</div>
+            <div class="meta-value"><?= sanitize($run['status']) ?></div>
+        </div>
+        <div class="meta-box">
+            <div class="meta-label">Veiculo</div>
+            <div class="meta-value"><?= sanitize(trim(($run['vehicle_plate'] ?? '') . ' ' . ($run['vehicle_model'] ?? ''))) ?: '-' ?></div>
+        </div>
+        <div class="meta-box">
+            <div class="meta-label">Data inicio</div>
+            <div class="meta-value"><?= sanitize(formatDateTime($run['iniciado_em'] ?: $run['created_at'])) ?></div>
+        </div>
+        <div class="meta-box">
+            <div class="meta-label">Data termino</div>
+            <div class="meta-value"><?= sanitize(formatDateTime($run['finalizado_em'])) ?></div>
+        </div>
+        <div class="meta-box">
+            <div class="meta-label">Prazo</div>
+            <div class="meta-value"><?= sanitize(formatDateTime($run['prazo_em'])) ?></div>
+        </div>
+        <div class="meta-box">
+            <div class="meta-label">Tempo de execucao</div>
+            <div class="meta-value"><?= sanitize($tempoFormatado) ?></div>
+        </div>
     </div>
     <div class="no-print" style="margin:8px 0;">
         <button onclick="window.print()" style="padding:8px 12px; background:#0f172a; color:white; border:none; border-radius:6px;">Salvar como PDF</button>
@@ -136,8 +162,8 @@ if ($sigRelPath) {
     <table>
         <thead>
             <tr>
-                <th style="width:25%;">Pergunta</th>
-                <th style="width:25%;">Resposta</th>
+                <th style="width:35%;">Pergunta</th>
+                <th style="width:15%;">Resposta</th>
                 <th style="width:50%;">Anexos</th>
             </tr>
         </thead>
@@ -230,5 +256,3 @@ if ($sigRelPath) {
 
 </body>
 </html>
-
-

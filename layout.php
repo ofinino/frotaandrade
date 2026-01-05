@@ -20,6 +20,16 @@ function render_header(string $title = 'Painel'): void
                 $navItems[] = ['page' => 'checks', 'label' => 'ExecuÃ§Ãµes', 'href' => 'index.php?page=checks', 'perm' => true, 'icon' => 'list'];
                 $navItems[] = ['page' => 'videos', 'label' => 'VÃ­deos', 'href' => 'index.php?page=videos', 'perm' => true, 'icon' => 'template'];
             }
+            if ((is_admin() || has_permission('ss.view'))) {
+                $navItems[] = ['page' => 'servicos', 'label' => 'ServiÇos', 'href' => 'index.php?page=servicos', 'perm' => true, 'icon' => 'list'];
+            }
+            if ((is_admin() || has_permission('os.view'))) {
+                $navItems[] = ['page' => 'os', 'label' => 'Ordens de ServiÇo', 'href' => 'index.php?page=os', 'perm' => true, 'icon' => 'folder'];
+            }
+            if ((is_admin() || has_permission('preventiva.view'))) {
+                $navItems[] = ['page' => 'planos_preventiva', 'label' => 'Planos Preventiva', 'href' => 'index.php?page=planos_preventiva', 'perm' => true, 'icon' => 'history'];
+                $navItems[] = ['page' => 'vencimentos_preventiva', 'label' => 'Vencimentos', 'href' => 'index.php?page=vencimentos_preventiva', 'perm' => true, 'icon' => 'flag'];
+            }
             if (has_permission('templates.view')) {
                 $navItems[] = ['page' => 'templates', 'label' => 'Modelos', 'href' => 'index.php?page=templates', 'perm' => true, 'icon' => 'template'];
                 $navItems[] = ['page' => 'revision_logs', 'label' => 'RevisÃµes', 'href' => 'index.php?page=revision_logs', 'perm' => true, 'icon' => 'history'];
@@ -453,6 +463,17 @@ function render_header(string $title = 'Painel'): void
                             ['page' => 'access', 'label' => 'Acessos', 'icon' => 'shield'],
                             ['page' => 'vehicles', 'label' => 'Veiculos', 'icon' => 'truck'],
                             ['page' => 'backup', 'label' => 'Backup DB', 'icon' => 'folder'],
+                        ],
+                    ],
+                    [
+                        'id' => 'manutencao',
+                        'label' => 'Manutencao',
+                        'icon' => 'folder',
+                        'items' => [
+                            ['page' => 'servicos', 'label' => 'Servicos', 'icon' => 'list'],
+                            ['page' => 'os', 'label' => 'Ordens de Servico', 'icon' => 'folder'],
+                            ['page' => 'planos_preventiva', 'label' => 'Planos Preventiva', 'icon' => 'history'],
+                            ['page' => 'vencimentos_preventiva', 'label' => 'Vencimentos', 'icon' => 'flag'],
                         ],
                     ],
                     [

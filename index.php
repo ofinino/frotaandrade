@@ -43,6 +43,11 @@ $pageRoutes = [
     'branches'  => ['mod' => 'cadastros',  'ctrl' => 'Branches',   'action' => 'index'],
     'groups'    => ['mod' => 'cadastros',  'ctrl' => 'Groups',     'action' => 'index'],
     'media'     => ['mod' => 'manutencao', 'ctrl' => 'Media',      'action' => 'serve'],
+    'servicos'  => ['mod' => 'manutencao', 'ctrl' => 'SolicitacoesServico', 'action' => 'index'],
+    'os'        => ['mod' => 'manutencao', 'ctrl' => 'OrdensServico',       'action' => 'index'],
+    'planos_preventiva' => ['mod' => 'manutencao', 'ctrl' => 'PlanosPreventiva', 'action' => 'index'],
+    'vencimentos_preventiva' => ['mod' => 'manutencao', 'ctrl' => 'PlanosPreventiva', 'action' => 'vencimentos'],
+    'run_preventiva' => ['mod' => 'manutencao', 'ctrl' => 'PlanosPreventiva', 'action' => 'run'],
 ];
 
 if (!isset($pageRoutes[$page])) {
