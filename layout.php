@@ -49,6 +49,8 @@ function render_header(string $title = 'Painel'): void
                 $navItems[] = ['page' => 'branches', 'label' => 'Filiais', 'href' => 'index.php?page=branches', 'perm' => true, 'icon' => 'flag'];
                 $navItems[] = ['page' => 'access', 'label' => 'Acessos', 'href' => 'index.php?page=access', 'perm' => true, 'icon' => 'shield'];
                 $navItems[] = ['page' => 'backup', 'label' => 'Backup DB', 'href' => 'index.php?page=backup', 'perm' => true, 'icon' => 'folder'];
+                // Para admin, mostra o atalho de limpeza mesmo sem a permissão marcada
+                $navItems[] = ['page' => 'cleanup', 'label' => 'Limpeza (dev)', 'href' => 'index.php?page=cleanup', 'perm' => true, 'icon' => 'folder'];
             }
         }
     }

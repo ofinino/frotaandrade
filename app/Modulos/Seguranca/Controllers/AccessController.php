@@ -170,6 +170,7 @@ class AccessController
             ['key' => 'os.manage', 'label' => 'OS - Gerenciar'],
             ['key' => 'preventiva.view', 'label' => 'Preventiva - Ver'],
             ['key' => 'preventiva.manage', 'label' => 'Preventiva - Gerenciar'],
+            ['key' => 'cleanup.manage', 'label' => 'Limpeza de dados (dev)'],
         ];
     }
 }

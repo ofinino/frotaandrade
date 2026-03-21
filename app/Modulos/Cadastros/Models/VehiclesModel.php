@@ -33,13 +33,41 @@ class VehiclesModel
         return [$where, $params];
     }
 
-    public function listar(): array
+    public function listar(array $filters = []): array
     {
         $sql = 'SELECT * FROM cad_veiculos WHERE empresa_id = ?';
         $params = [$this->empresaId];
         [$filialSql, $filialParams] = $this->filialWhere();
         $sql .= $filialSql;
         $params = array_merge($params, $filialParams);
+        if ($filters) {
+            if ($filters['ativo'] === '1') {
+                $sql .= " AND (csn_ativo IS NULL OR csn_ativo NOT IN (0,'0'))";
+            } elseif ($filters['ativo'] === '0') {
+                $sql .= " AND (csn_ativo IN (0,'0'))";
+            }
+            if ($filters['ano_de'] !== '') {
+                $sql .= ' AND year >= ?';
+                $params[] = $filters['ano_de'];
+            }
+            if ($filters['ano_ate'] !== '') {
+                $sql .= ' AND year <= ?';
+                $params[] = $filters['ano_ate'];
+            }
+            if ($filters['modelo'] !== '') {
+                $sql .= ' AND model LIKE ?';
+                $params[] = '%' . $filters['modelo'] . '%';
+            }
+            if ($filters['frota'] !== '') {
+                $sql .= ' AND (plate LIKE ? OR txt_placa_veiculo LIKE ?)';
+                $params[] = '%' . $filters['frota'] . '%';
+                $params[] = '%' . $filters['frota'] . '%';
+            }
+            if ($filters['tipo'] !== '') {
+                $sql .= ' AND txt_tipo_veiculo LIKE ?';
+                $params[] = '%' . $filters['tipo'] . '%';
+            }
+        }
         $sql .= ' ORDER BY created_at DESC';
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
@@ -61,23 +89,36 @@ class VehiclesModel
 
     public function criar(array $data): void
     {
-        $this->db->prepare('INSERT INTO cad_veiculos (empresa_id, filial_id, plate, model, year, notes, criado_por, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())')
+        $this->db->prepare('INSERT INTO cad_veiculos (empresa_id, filial_id, txt_placa_veiculo, txt_chassis, nin_lotacao_sentado, model, year, notes, csn_ativo, criado_por, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())')
             ->execute([
                 $this->empresaId,
-                $data['filial_id'],
-                $data['plate'],
-                $data['model'],
-                $data['year'],
-                $data['notes'],
-                $data['criado_por'],
+                $data['filial_id'] ?? null,
+                $data['txt_placa_veiculo'] ?? '',
+                $data['txt_chassis'] ?? '',
+                $data['nin_lotacao_sentado'] ?? null,
+                $data['model'] ?? '',
+                $data['year'] ?? '',
+                $data['notes'] ?? '',
+                $data['csn_ativo'] ?? 1,
+                $data['criado_por'] ?? null,
             ]);
     }
 
     public function atualizar(int $id, array $data): void
     {
-        $params = [$data['plate'], $data['model'], $data['year'], $data['notes'], $id, $this->empresaId];
+        $params = [
+            $data['txt_placa_veiculo'] ?? '',
+            $data['txt_chassis'] ?? '',
+            $data['nin_lotacao_sentado'] ?? null,
+            $data['model'] ?? '',
+            $data['year'] ?? '',
+            $data['notes'] ?? '',
+            $data['csn_ativo'] ?? 1,
+            $id,
+            $this->empresaId
+        ];
         [$filialSql, $filialParams] = $this->filialWhere();
-        $sql = 'UPDATE cad_veiculos SET plate = ?, model = ?, year = ?, notes = ? WHERE id = ? AND empresa_id = ?' . $filialSql;
+        $sql = 'UPDATE cad_veiculos SET txt_placa_veiculo = ?, txt_chassis = ?, nin_lotacao_sentado = ?, model = ?, year = ?, notes = ?, csn_ativo = ? WHERE id = ? AND empresa_id = ?' . $filialSql;
         $params = array_merge($params, $filialParams);
         $this->db->prepare($sql)->execute($params);
     }

@@ -27,6 +27,14 @@ class VehiclesController
         }
 
         $editingId = isset($_GET['edit']) ? (int) $_GET['edit'] : null;
+        $filters = [
+            'ativo' => array_key_exists('ativo', $_GET) ? ($_GET['ativo'] ?? '') : '1',
+            'ano_de' => $_GET['ano_de'] ?? '',
+            'ano_ate' => $_GET['ano_ate'] ?? '',
+            'modelo' => $_GET['modelo'] ?? '',
+            'frota' => $_GET['frota'] ?? '',
+            'tipo' => $_GET['tipo'] ?? '',
+        ];
 
         if (isset($_GET['delete'])) {
             $this->delete((int) $_GET['delete']);
@@ -39,7 +47,7 @@ class VehiclesController
         }
 
         try {
-            $vehicles = $this->model->listar();
+            $vehicles = $this->model->listar($filters);
         } catch (\Throwable $e) {
             flash('error', 'Erro ao carregar veiculos: ' . $e->getMessage());
             $vehicles = [];
@@ -58,15 +66,21 @@ class VehiclesController
             'title' => 'Veiculos',
             'vehicles' => $vehicles,
             'editVehicle' => $editVehicle,
+            'filters' => $filters,
+            'total' => count($vehicles),
         ]);
     }
 
     private function save(?int $editingId): void
     {
         $plate = strtoupper(trim($_POST['plate'] ?? ''));
-        $model = trim($_POST['model'] ?? '');
-        $year = trim($_POST['year'] ?? '');
+        $modelo = trim($_POST['model'] ?? '');
+        $ano = trim($_POST['year'] ?? '');
         $notes = trim($_POST['notes'] ?? '');
+        $chassis = trim($_POST['chassis'] ?? '');
+        $lotacao = $_POST['lotacao'] === '' ? null : (int) $_POST['lotacao'];
+        $ativo = isset($_POST['ativo']) ? -1 : 0;
+        $userId = current_user()['id'] ?? null;
 
         if ($plate === '') {
             flash('error', 'Placa e obrigatoria.');
@@ -76,18 +90,26 @@ class VehiclesController
 
         if ($editingId) {
             $this->model->atualizar($editingId, [
-                'plate' => $plate,
-                'model' => $model,
-                'year' => $year,
+                'txt_placa_veiculo' => $plate,
+                'model' => $modelo,
+                'year' => $ano,
                 'notes' => $notes,
+                'txt_chassis' => $chassis,
+                'nin_lotacao_sentado' => $lotacao,
+                'csn_ativo' => $ativo,
             ]);
             flash('success', 'Veiculo atualizado.');
         } else {
             $this->model->criar([
-                'plate' => $plate,
-                'model' => $model,
-                'year' => $year,
+                'filial_id' => current_branch_id(),
+                'txt_placa_veiculo' => $plate,
+                'model' => $modelo,
+                'year' => $ano,
                 'notes' => $notes,
+                'txt_chassis' => $chassis,
+                'nin_lotacao_sentado' => $lotacao,
+                'csn_ativo' => $ativo,
+                'criado_por' => $userId,
             ]);
             flash('success', 'Veiculo criado.');
         }
