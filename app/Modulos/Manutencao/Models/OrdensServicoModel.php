@@ -8,6 +8,8 @@ class OrdensServicoModel
     private ?int $filialId;
     private array $filiais;
     private array $filialCols = [];
+    private ?bool $scheduleTableReady = null;
+    private ?bool $scheduleDateTimeReady = null;
 
     public function __construct(\PDO $db, int $empresaId, ?int $filialId, array $filiais = [])
     {
@@ -38,16 +40,38 @@ class OrdensServicoModel
         if (!$col) {
             return ['', []];
         }
-        $ids = $this->filiais;
-        if (empty($ids) && $this->filialId) {
-            $ids = [$this->filialId];
+        $ids = $this->normalizarFiliais($this->filiais);
+        $filialAtual = $this->normalizarFilialId($this->filialId);
+        if (empty($ids) && $filialAtual !== null) {
+            $ids = [$filialAtual];
         }
         if (!$ids) {
             return ['', []];
         }
         $place = implode(',', array_fill(0, count($ids), '?'));
         $prefix = $alias ? "{$alias}." : '';
-        return [" AND ({$prefix}`$col` IS NULL OR {$prefix}`$col` IN ($place))", $ids];
+        return [" AND ({$prefix}`$col` IS NULL OR {$prefix}`$col` = 0 OR {$prefix}`$col` IN ($place))", $ids];
+    }
+
+    private function normalizarFilialId($filialId): ?int
+    {
+        if ($filialId === null || $filialId === '' || !is_numeric($filialId)) {
+            return null;
+        }
+        $id = (int)$filialId;
+        return $id > 0 ? $id : null;
+    }
+
+    private function normalizarFiliais(array $filiais): array
+    {
+        $result = [];
+        foreach ($filiais as $id) {
+            $norm = $this->normalizarFilialId($id);
+            if ($norm !== null) {
+                $result[$norm] = $norm;
+            }
+        }
+        return array_values($result);
     }
 
     private function gerarCodigo(): string
@@ -64,15 +88,150 @@ class OrdensServicoModel
         return $prefix . str_pad((string)$num, 6, '0', STR_PAD_LEFT);
     }
 
+    private function ensureScheduleTable(): bool
+    {
+        if ($this->scheduleTableReady !== null) {
+            return $this->scheduleTableReady;
+        }
+
+        try {
+            $existsStmt = $this->db->query("SHOW TABLES LIKE 'man_work_order_schedule'");
+            if ($existsStmt && $existsStmt->fetchColumn()) {
+                $this->scheduleTableReady = true;
+                $this->ensureScheduleDateTimeColumn();
+                return true;
+            }
+
+            $this->db->exec(
+                "CREATE TABLE IF NOT EXISTS man_work_order_schedule (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    empresa_id INT NOT NULL,
+                    filial_id INT NULL,
+                    work_order_id INT NOT NULL,
+                    executor_id INT NULL,
+                    programada_para DATETIME NULL,
+                    updated_by INT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY uq_wo_schedule (work_order_id),
+                    INDEX idx_wo_schedule_exec (empresa_id, filial_id, executor_id),
+                    INDEX idx_wo_schedule_date (programada_para)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            );
+            $this->scheduleTableReady = true;
+            $this->scheduleDateTimeReady = true;
+            return true;
+        } catch (\Throwable $e) {
+            $this->scheduleTableReady = false;
+            return false;
+        }
+    }
+
+    private function ensureScheduleDateTimeColumn(): void
+    {
+        if ($this->scheduleDateTimeReady !== null) {
+            return;
+        }
+
+        try {
+            $stmt = $this->db->prepare(
+                "SELECT DATA_TYPE
+                 FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME = 'man_work_order_schedule'
+                   AND COLUMN_NAME = 'programada_para'
+                 LIMIT 1"
+            );
+            $stmt->execute();
+            $type = strtolower((string)($stmt->fetchColumn() ?? ''));
+            if ($type === 'date') {
+                $this->db->exec('ALTER TABLE man_work_order_schedule MODIFY COLUMN programada_para DATETIME NULL');
+            }
+            $this->scheduleDateTimeReady = true;
+        } catch (\Throwable $e) {
+            $this->scheduleDateTimeReady = false;
+        }
+    }
+
+    private function normalizarProgramadaPara(?string $programadaPara): ?string
+    {
+        $value = trim((string)$programadaPara);
+        if ($value === '') {
+            return null;
+        }
+
+        $formats = [
+            'd/m/Y H:i:s',
+            'd/m/Y H:i',
+            'd/m/Y',
+            'Y-m-d H:i:s',
+            'Y-m-d H:i',
+            'Y-m-d\TH:i:s',
+            'Y-m-d\TH:i',
+            'Y-m-d',
+        ];
+
+        foreach ($formats as $format) {
+            $dt = \DateTime::createFromFormat($format, $value);
+            if (!$dt) {
+                continue;
+            }
+
+            $errors = \DateTime::getLastErrors();
+            $warningCount = is_array($errors) ? (int)($errors['warning_count'] ?? 0) : 0;
+            $errorCount = is_array($errors) ? (int)($errors['error_count'] ?? 0) : 0;
+            if ($warningCount > 0 || $errorCount > 0) {
+                continue;
+            }
+
+            if ($dt->format($format) !== $value) {
+                continue;
+            }
+
+            if (in_array($format, ['Y-m-d', 'd/m/Y'], true)) {
+                $dt->setTime(0, 0, 0);
+            } elseif (in_array($format, ['Y-m-d\TH:i', 'Y-m-d H:i', 'd/m/Y H:i'], true)) {
+                $dt->setTime((int)$dt->format('H'), (int)$dt->format('i'), 0);
+            }
+
+            return $dt->format('Y-m-d H:i:s');
+        }
+
+        return null;
+    }
     public function listar(array $filters = []): array
     {
+        $scheduleReady = $this->ensureScheduleTable();
+
         $sql = 'SELECT o.*, v.plate AS vehicle_plate, u.name AS aberta_por_nome,
-                       COUNT(DISTINCT p.service_request_id) AS total_ss
+                       COUNT(DISTINCT p.service_request_id) AS total_ss';
+        if ($scheduleReady) {
+            $sql .= ', ws.executor_id, ws.programada_para, ue.name AS executor_nome';
+        } else {
+            $sql .= ', NULL AS executor_id, NULL AS programada_para, NULL AS executor_nome';
+        }
+
+        $sql .= '
                 FROM man_work_orders o
                 LEFT JOIN cad_veiculos v ON v.id = o.veiculo_id
                 LEFT JOIN seg_usuarios u ON u.id = o.aberta_por
-                LEFT JOIN man_service_request_work_order p ON p.work_order_id = o.id
+                LEFT JOIN man_service_request_work_order p ON p.work_order_id = o.id';
+        if ($scheduleReady) {
+            $sql .= '
+                LEFT JOIN (
+                    SELECT s1.*
+                    FROM man_work_order_schedule s1
+                    INNER JOIN (
+                        SELECT empresa_id, work_order_id, MAX(id) AS max_id
+                        FROM man_work_order_schedule
+                        GROUP BY empresa_id, work_order_id
+                    ) s2 ON s2.max_id = s1.id
+                ) ws ON ws.work_order_id = o.id AND ws.empresa_id = o.empresa_id
+                LEFT JOIN seg_usuarios ue ON ue.id = ws.executor_id';
+        }
+        $sql .= '
                 WHERE o.empresa_id = ?';
+
         $params = [$this->empresaId];
         [$filialSql, $filialParams] = $this->filialWhere('o');
         $sql .= $filialSql;
@@ -94,12 +253,110 @@ class OrdensServicoModel
             $params[] = $like;
         }
 
-        $sql .= ' GROUP BY o.id ORDER BY o.created_at DESC';
+        $sql .= ' GROUP BY o.id ORDER BY (programada_para IS NULL) ASC, programada_para ASC, o.created_at ASC';
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
     }
 
+    public function listarExecutantes(): array
+    {
+        $sql = "SELECT id, name, role
+                FROM seg_usuarios
+                WHERE empresa_id = ? AND role IN ('executante','lider')";
+        $params = [$this->empresaId];
+        [$filialSql, $filialParams] = $this->filialWhere('', 'seg_usuarios');
+        $sql .= $filialSql . ' ORDER BY name ASC';
+        $params = array_merge($params, $filialParams);
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
+        if ($rows) {
+            return $rows;
+        }
+
+        $fallback = $this->db->prepare(
+            'SELECT id, name, role FROM seg_usuarios WHERE empresa_id = ? ORDER BY name ASC'
+        );
+        $fallback->execute([$this->empresaId]);
+        return $fallback->fetchAll();
+    }
+
+    public function agendarExecutor(int $osId, ?int $executorId, ?string $programadaPara, ?int $actorUserId): bool
+    {
+        if (!$this->ensureScheduleTable()) {
+            return false;
+        }
+
+        $date = $this->normalizarProgramadaPara($programadaPara);
+
+        $filialNorm = $this->normalizarFilialId($this->filialId);
+
+        try {
+            $this->db->beginTransaction();
+
+            $delete = $this->db->prepare(
+                'DELETE FROM man_work_order_schedule WHERE empresa_id = ? AND work_order_id = ?'
+            );
+            $delete->execute([$this->empresaId, $osId]);
+
+            if ($executorId !== null || $date !== null) {
+                $insert = $this->db->prepare(
+                    'INSERT INTO man_work_order_schedule (empresa_id, filial_id, work_order_id, executor_id, programada_para, updated_by, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                );
+                $insert->execute([
+                    $this->empresaId,
+                    $filialNorm,
+                    $osId,
+                    $executorId ?: null,
+                    $date,
+                    $actorUserId,
+                ]);
+            }
+
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            return false;
+        }
+        if ($executorId) {
+            $statusStmt = $this->db->prepare(
+                "UPDATE man_work_orders
+                 SET status = CASE
+                     WHEN status IN ('rascunho','aprovada') THEN 'programada'
+                     ELSE status
+                 END,
+                 updated_at = NOW()
+                 WHERE id = ? AND empresa_id = ?"
+            );
+            $statusStmt->execute([$osId, $this->empresaId]);
+        }
+
+        return true;
+    }
+
+    public function obterAgendamento(int $osId): ?array
+    {
+        if (!$this->ensureScheduleTable()) {
+            return null;
+        }
+
+        $stmt = $this->db->prepare(
+            'SELECT s.executor_id, s.programada_para, u.name AS executor_nome
+             FROM man_work_order_schedule s
+             LEFT JOIN seg_usuarios u ON u.id = s.executor_id
+             WHERE s.empresa_id = ? AND s.work_order_id = ?
+             ORDER BY s.id DESC
+             LIMIT 1'
+        );
+        $stmt->execute([$this->empresaId, $osId]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
     public function obter(int $id): ?array
     {
         $sql = 'SELECT o.*, v.plate AS vehicle_plate, v.model AS vehicle_model, u.name AS aberta_por_nome
@@ -127,13 +384,14 @@ class OrdensServicoModel
     public function criar(array $payload): int
     {
         $codigo = $payload['codigo'] ?? $this->gerarCodigo();
+        $filialDestino = $this->normalizarFilialId($payload['filial_id'] ?? null) ?? $this->normalizarFilialId($this->filialId);
         $stmt = $this->db->prepare(
             'INSERT INTO man_work_orders (empresa_id, filial_id, codigo, veiculo_id, status, odometro_abertura, odometro_fechamento, aberta_por, aberta_em, iniciada_em, concluida_em, encerrada_em, observacoes, created_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
         );
         $stmt->execute([
             $this->empresaId,
-            $payload['filial_id'] ?? $this->filialId,
+            $filialDestino,
             $codigo,
             $payload['veiculo_id'] ?? null,
             $payload['status'] ?? 'rascunho',
@@ -206,7 +464,7 @@ class OrdensServicoModel
         );
         $stmt->execute([
             $this->empresaId,
-            $this->filialId,
+            $this->normalizarFilialId($this->filialId),
             $osId,
             $data['titulo'],
             $data['descricao'] ?? null,
@@ -227,7 +485,7 @@ class OrdensServicoModel
         $total = $data['total'] ?? ($horas * $valorHora);
         $stmt->execute([
             $this->empresaId,
-            $this->filialId,
+            $this->normalizarFilialId($this->filialId),
             $osId,
             $data['executor_id'] ?? null,
             $data['descricao'],
@@ -249,7 +507,7 @@ class OrdensServicoModel
         $total = $data['total'] ?? ($qtd * $custo);
         $stmt->execute([
             $this->empresaId,
-            $this->filialId,
+            $this->normalizarFilialId($this->filialId),
             $osId,
             $data['part_number'] ?? null,
             $data['descricao'],
@@ -320,7 +578,9 @@ class OrdensServicoModel
             $this->db->prepare(
                 'INSERT INTO man_service_request_work_order (empresa_id, filial_id, service_request_id, work_order_id, created_at)
                  VALUES (?, ?, ?, ?, NOW())'
-            )->execute([$this->empresaId, $this->filialId, $sid, $osId]);
+            )->execute([$this->empresaId, $this->normalizarFilialId($this->filialId), $sid, $osId]);
         }
     }
 }
+
+

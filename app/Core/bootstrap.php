@@ -1,5 +1,5 @@
 <?php
-// Bootstrap interno (use o bootstrap raiz quando poss?vel).
+// Bootstrap interno (use o bootstrap raiz quando possível).
 if (!function_exists('db')) {
     session_start();
     $config = require __DIR__ . '/../../config.php';

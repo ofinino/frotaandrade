@@ -38,16 +38,38 @@ class SolicitacoesServicoModel
         if (!$col) {
             return ['', []];
         }
-        $ids = $this->filiais;
-        if (empty($ids) && $this->filialId) {
-            $ids = [$this->filialId];
+        $ids = $this->normalizarFiliais($this->filiais);
+        $filialAtual = $this->normalizarFilialId($this->filialId);
+        if (empty($ids) && $filialAtual !== null) {
+            $ids = [$filialAtual];
         }
         if (!$ids) {
             return ['', []];
         }
         $place = implode(',', array_fill(0, count($ids), '?'));
         $prefix = $alias ? "{$alias}." : '';
-        return [" AND ({$prefix}`$col` IS NULL OR {$prefix}`$col` IN ($place))", $ids];
+        return [" AND ({$prefix}`$col` IS NULL OR {$prefix}`$col` = 0 OR {$prefix}`$col` IN ($place))", $ids];
+    }
+
+    private function normalizarFilialId($filialId): ?int
+    {
+        if ($filialId === null || $filialId === '' || !is_numeric($filialId)) {
+            return null;
+        }
+        $id = (int)$filialId;
+        return $id > 0 ? $id : null;
+    }
+
+    private function normalizarFiliais(array $filiais): array
+    {
+        $result = [];
+        foreach ($filiais as $id) {
+            $norm = $this->normalizarFilialId($id);
+            if ($norm !== null) {
+                $result[$norm] = $norm;
+            }
+        }
+        return array_values($result);
     }
 
     public function listar(array $filters = []): array
@@ -132,10 +154,13 @@ class SolicitacoesServicoModel
 
     public function criar(array $payload): int
     {
+        $filialPayload = array_key_exists('filial_id', $payload) ? $payload['filial_id'] : $this->filialId;
+        $filialDestino = $this->normalizarFilialId($filialPayload) ?? $this->normalizarFilialId($this->filialId);
+
         $cols = ['empresa_id','filial_id','source_type','source_table','source_id','source_ref','source_payload_json','veiculo_id','prioridade','titulo','descricao','status','rejeitada_motivo','criada_por','encerrada_em','created_at'];
         $values = [
             $this->empresaId,
-            $payload['filial_id'] ?? $this->filialId,
+            $filialDestino,
             $payload['source_type'],
             $payload['source_table'] ?? null,
             $payload['source_id'] ?? null,
@@ -196,6 +221,7 @@ class SolicitacoesServicoModel
         if (!$ss) {
             throw new \RuntimeException('SS nao encontrada.');
         }
+        $filialOs = $this->normalizarFilialId($ss['filial_id'] ?? null) ?? $this->normalizarFilialId($this->filialId);
         $osId = $osModel->criar([
             'codigo' => $osData['codigo'] ?? null,
             'veiculo_id' => $ss['veiculo_id'],
@@ -204,7 +230,7 @@ class SolicitacoesServicoModel
             'aberta_por' => $osData['aberta_por'] ?? ($osData['user_id'] ?? null),
             'aberta_em' => $osData['aberta_em'] ?? date('Y-m-d H:i:s'),
             'observacoes' => $osData['observacoes'] ?? $ss['descricao'],
-            'filial_id' => $ss['filial_id'] ?? $this->filialId,
+            'filial_id' => $filialOs,
         ]);
         $this->vincularEmOS($id, $osId);
         $this->mudarStatus($id, 'convertida', null);
@@ -225,7 +251,7 @@ class SolicitacoesServicoModel
             'INSERT INTO man_service_request_work_order (empresa_id, filial_id, service_request_id, work_order_id, created_at)
              VALUES (?, ?, ?, ?, NOW())'
         );
-        $stmt->execute([$this->empresaId, $this->filialId, $ssId, $osId]);
+        $stmt->execute([$this->empresaId, $this->normalizarFilialId($this->filialId), $ssId, $osId]);
         return (int)$this->db->lastInsertId();
     }
 
@@ -278,6 +304,7 @@ class SolicitacoesServicoModel
              FROM man_checklist_respostas r WHERE r.checklist_execucao_id = ?'
         );
         $respStmt->execute([$execucaoId]);
+        $filialExecucao = $this->normalizarFilialId($exec['filial_id'] ?? null) ?? $this->normalizarFilialId($this->filialId);
         $created = 0;
         foreach ($respStmt as $row) {
             $answer = json_decode($row['answer'] ?? '', true);
@@ -299,7 +326,7 @@ class SolicitacoesServicoModel
             $titulo = 'NC: ' . ($labels[$itemId] ?? ('Item ' . $itemId));
             $descricao = $answer['obs'] ?? 'Nao conforme';
             $this->criar([
-                'filial_id' => $exec['filial_id'] ?? $this->filialId,
+                'filial_id' => $filialExecucao,
                 'source_type' => 'checklist_nonconformity',
                 'source_table' => 'man_checklist_execucoes',
                 'source_id' => $execucaoId,
@@ -317,3 +344,4 @@ class SolicitacoesServicoModel
         return $created;
     }
 }
+

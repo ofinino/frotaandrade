@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once __DIR__ . '/bootstrap.php';
 function render_header(string $title = 'Painel'): void
 {
@@ -11,20 +11,20 @@ function render_header(string $title = 'Painel'): void
     if ($user) {
         if ($user['role'] === 'executante') {
             if (has_permission('checks.view')) {
-                $navItems[] = ['page' => 'checks', 'label' => 'Minhas execuÃ§Ãµes', 'href' => 'index.php?page=checks', 'perm' => true, 'icon' => 'clipboard'];
-                $navItems[] = ['page' => 'videos', 'label' => 'VÃ­deos', 'href' => 'index.php?page=videos', 'perm' => true, 'icon' => 'template'];
+                $navItems[] = ['page' => 'checks', 'label' => 'Minhas execuÃƒÂ§ÃƒÂµes', 'href' => 'index.php?page=checks', 'perm' => true, 'icon' => 'clipboard'];
+                $navItems[] = ['page' => 'videos', 'label' => 'VÃƒÂ­deos', 'href' => 'index.php?page=videos', 'perm' => true, 'icon' => 'template'];
             }
         } else {
             $navItems[] = ['page' => 'dashboard', 'label' => 'Home', 'href' => 'index.php', 'perm' => true, 'icon' => 'home'];
             if (has_permission('checks.view')) {
-                $navItems[] = ['page' => 'checks', 'label' => 'ExecuÃ§Ãµes', 'href' => 'index.php?page=checks', 'perm' => true, 'icon' => 'list'];
-                $navItems[] = ['page' => 'videos', 'label' => 'VÃ­deos', 'href' => 'index.php?page=videos', 'perm' => true, 'icon' => 'template'];
+                $navItems[] = ['page' => 'checks', 'label' => 'ExecuÃƒÂ§ÃƒÂµes', 'href' => 'index.php?page=checks', 'perm' => true, 'icon' => 'list'];
+                $navItems[] = ['page' => 'videos', 'label' => 'VÃƒÂ­deos', 'href' => 'index.php?page=videos', 'perm' => true, 'icon' => 'template'];
             }
             if ((is_admin() || has_permission('ss.view'))) {
-                $navItems[] = ['page' => 'servicos', 'label' => 'ServiÇos', 'href' => 'index.php?page=servicos', 'perm' => true, 'icon' => 'list'];
+                $navItems[] = ['page' => 'servicos', 'label' => 'ServiÃ‡os', 'href' => 'index.php?page=servicos', 'perm' => true, 'icon' => 'list'];
             }
             if ((is_admin() || has_permission('os.view'))) {
-                $navItems[] = ['page' => 'os', 'label' => 'Ordens de ServiÇo', 'href' => 'index.php?page=os', 'perm' => true, 'icon' => 'folder'];
+                $navItems[] = ['page' => 'os', 'label' => 'Ordens de ServiÃ‡o', 'href' => 'index.php?page=os', 'perm' => true, 'icon' => 'folder'];
             }
             if ((is_admin() || has_permission('preventiva.view'))) {
                 $navItems[] = ['page' => 'planos_preventiva', 'label' => 'Planos Preventiva', 'href' => 'index.php?page=planos_preventiva', 'perm' => true, 'icon' => 'history'];
@@ -32,24 +32,24 @@ function render_header(string $title = 'Painel'): void
             }
             if (has_permission('templates.view')) {
                 $navItems[] = ['page' => 'templates', 'label' => 'Modelos', 'href' => 'index.php?page=templates', 'perm' => true, 'icon' => 'template'];
-                $navItems[] = ['page' => 'revision_logs', 'label' => 'RevisÃµes', 'href' => 'index.php?page=revision_logs', 'perm' => true, 'icon' => 'history'];
+                $navItems[] = ['page' => 'revision_logs', 'label' => 'RevisÃƒÂµes', 'href' => 'index.php?page=revision_logs', 'perm' => true, 'icon' => 'history'];
                 $navItems[] = ['page' => 'groups', 'label' => 'Grupos', 'href' => 'index.php?page=groups', 'perm' => true, 'icon' => 'folder'];
             }
             if (has_permission('vehicles.view')) {
-                $navItems[] = ['page' => 'vehicles', 'label' => 'VeÃ­culos', 'href' => 'index.php?page=vehicles', 'perm' => true, 'icon' => 'truck'];
+                $navItems[] = ['page' => 'vehicles', 'label' => 'VeÃƒÂ­culos', 'href' => 'index.php?page=vehicles', 'perm' => true, 'icon' => 'truck'];
             }
             if (has_permission('people.view')) {
                 $navItems[] = ['page' => 'people', 'label' => 'Pessoas', 'href' => 'index.php?page=people', 'perm' => true, 'icon' => 'users'];
             }
             if (has_permission('users.view')) {
-                $navItems[] = ['page' => 'users', 'label' => 'UsuÃ¡rios', 'href' => 'index.php?page=users', 'perm' => true, 'icon' => 'user'];
+                $navItems[] = ['page' => 'users', 'label' => 'UsuÃƒÂ¡rios', 'href' => 'index.php?page=users', 'perm' => true, 'icon' => 'user'];
             }
             if (is_admin()) {
                 $navItems[] = ['page' => 'company', 'label' => 'Empresa', 'href' => 'index.php?page=company', 'perm' => true, 'icon' => 'building'];
                 $navItems[] = ['page' => 'branches', 'label' => 'Filiais', 'href' => 'index.php?page=branches', 'perm' => true, 'icon' => 'flag'];
                 $navItems[] = ['page' => 'access', 'label' => 'Acessos', 'href' => 'index.php?page=access', 'perm' => true, 'icon' => 'shield'];
                 $navItems[] = ['page' => 'backup', 'label' => 'Backup DB', 'href' => 'index.php?page=backup', 'perm' => true, 'icon' => 'folder'];
-                // Para admin, mostra o atalho de limpeza mesmo sem a permissão marcada
+                // Para admin, mostra o atalho de limpeza mesmo sem a permissÃ£o marcada
                 $navItems[] = ['page' => 'cleanup', 'label' => 'Limpeza (dev)', 'href' => 'index.php?page=cleanup', 'perm' => true, 'icon' => 'folder'];
             }
         }
@@ -117,8 +117,8 @@ function render_header(string $title = 'Painel'): void
                 --sidebar-muted: #4b5563;
                 --sidebar-highlight: #1f2937;
             }
-            html { scrollbar-gutter: stable; }
-            body { margin: 0; }
+            html { scrollbar-gutter: stable both-edges; }
+            body { margin: 0; overflow-y: scroll; }
 
             /* Novo menu lateral */
             #app-shell { gap: 0; }
@@ -304,20 +304,35 @@ function render_header(string $title = 'Painel'): void
             }
             .nav-backdrop.backdrop-open { opacity: 1; pointer-events: auto; }
 
-            .main-shell {
-                width: 100%;
+                        .main-shell {
+                flex: 1 1 auto;
+                min-width: 0;
+                width: calc(100vw - var(--sidebar-w) - 0.5rem);
                 margin-left: calc(var(--sidebar-w) + 0.5rem);
-                transition: margin-left 200ms ease;
+                overflow-x: clip;
             }
             .main-shell .content-inner { max-width: none; margin: 0; width: 100%; }
-            .app-shell.sidebar-collapsed .main-shell { margin-left: 0; }
+            .os-header-actions {
+                margin-left: auto;
+                flex-wrap: nowrap;
+                flex-shrink: 0;
+                white-space: nowrap;
+                min-width: max-content;
+            }
+            .os-header-actions > * {
+                flex-shrink: 0;
+            }
+            .os-header-actions .text-right {
+                white-space: nowrap;
+            }
+            .app-shell.sidebar-collapsed .main-shell { margin-left: 0; width: 100vw; }
             .app-shell.sidebar-collapsed #sidebar { transform: translateX(-100%); }
 
             @media (max-width: 1024px) {
                 #sidebar.sidebar-v2 { transform: translateX(-100%); box-shadow: 12px 0 28px rgba(0,0,0,0.35); }
                 #sidebar.sidebar-v2.sidebar-open { transform: translateX(0); }
                 .sidebar-close { display: inline-flex; }
-                .main-shell { margin-left: 0; }
+                .main-shell { margin-left: 0; width: 100vw; }
                 #nav-open-main { display: inline-flex; }
             }
             #nav-open-main.nav-trigger {
@@ -341,7 +356,7 @@ function render_header(string $title = 'Painel'): void
                 background: rgba(255,255,255,0.06);
             }
 
-            /* Tema escuro da pÃ¡gina */
+            /* Tema escuro da pÃƒÂ¡gina */
             html[data-page-theme="dark"] #app-shell,
             #app-shell.app-page-dark { background-color: #0f172a; }
             html[data-page-theme="dark"] .main-shell,
@@ -565,7 +580,7 @@ function render_header(string $title = 'Painel'): void
                                 <?php foreach ($ctx['items'] as $it): ?>
                                     <?php if (!isset($navByPage[$it['page']])) continue; $item = $navByPage[$it['page']]; ?>
                                     <?php $isActive = ($item['page'] === 'dashboard' && ($currentPage === 'dashboard' || $currentPage === '')) || $currentPage === $item['page']; ?>
-                                    <a href="<?= $item['href'] ?>" class="menu-link" data-active="<?= $isActive ? 'true' : 'false' ?>" <?= $isActive ? 'aria-current="page"' : '' ?>>
+                                    <a href="<?= $item['href'] ?>" class="menu-link" onclick="window.location.href=this.href; return false;" data-active="<?= $isActive ? 'true' : 'false' ?>" <?= $isActive ? 'aria-current="page"' : ' ' ?>>
                                         <span class="menu-dot"></span>
                                         <span class="link-text"><?= sanitize($it['label']) ?></span>
                                     </a>
@@ -578,7 +593,7 @@ function render_header(string $title = 'Painel'): void
 
             <div class="sidebar-footer">
                 <?php if ($user): ?>
-                    <a class="menu-link logout-link" href="logout.php">
+                    <a class="menu-link logout-link" href="logout.php" onclick="window.location.href=this.href; return false;">
                         <?= $icon('logout') ?>
                         <span>Logout</span>
                     </a>
@@ -596,7 +611,15 @@ function render_header(string $title = 'Painel'): void
                     </button>
                     <div class="text-lg font-semibold text-slate-900"><?= sanitize($title ?: $appName) ?></div>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 os-header-actions">
+                    <?php if ($currentPage === 'os'): ?>
+                        <div class="flex items-center gap-2 mr-2">
+                            <button type="button" id="os-toggle-filters" class="text-sm text-slate-700 px-2 py-1 rounded hover:bg-slate-100" aria-expanded="true">Ocultar filtros</button>
+                            <?php if (has_permission('os.manage')): ?>
+                                <a class="text-sm text-slate-700 px-2 py-1 rounded hover:bg-slate-100" href="index.php?mod=manutencao&ctrl=OrdensServico&action=create">Nova OS</a>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
                     <button type="button" id="page-theme-toggle" aria-label="Alternar tema da pagina" class="flex items-center gap-1.5 text-xs font-medium bg-white text-slate-700 border border-slate-200 shadow-sm rounded-full px-1.5 py-0.5">
                         <span class="w-8 h-4 bg-slate-200 border border-slate-300 rounded-full relative inline-flex items-center transition-all duration-200" id="page-theme-switch">
                             <span class="absolute left-0.5 top-0.5 w-3 h-3 rounded-full bg-white shadow transition-all duration-200" id="page-theme-knob"></span>
@@ -623,7 +646,7 @@ function render_header(string $title = 'Painel'): void
                         </div>
                     <?php endif; ?>
                 </div>
-            </header>
+                        </header>
 
             <main class="w-full px-0 py-3">
                 <div class="content-inner space-y-4">
@@ -641,8 +664,6 @@ function render_footer(): void
     ?>
                 </div>
             </main>
-        </div>
-    </div>
     <script>
         (function(){
     const appShell = document.getElementById('app-shell');
@@ -813,3 +834,6 @@ function render_footer(): void
     </html>
     <?php
 }
+
+
+

@@ -7,7 +7,7 @@ class View
     {
         $basePath = __DIR__ . '/../Modulos/' . $module . '/Views/' . $view . '.php';
         if (!file_exists($basePath)) {
-            echo 'View não encontrada';
+            echo 'View nÃ£o encontrada';
             return;
         }
         extract($data, EXTR_SKIP);
@@ -15,11 +15,12 @@ class View
         if ($withLayout) {
             require_once __DIR__ . '/../../layout.php';
             $title = $data['title'] ?? ucfirst(strtolower($view));
-            render_header($title);
+            \render_header($title);
             include $basePath;
-            render_footer();
+            \render_footer();
         } else {
             include $basePath;
         }
     }
 }
+

@@ -27,6 +27,74 @@ class OrdensServicoController
         $this->auditoria = new AuditoriaModel($this->db, $empresaId, $filialId, $filiais);
     }
 
+    private function json(array $payload, int $status = 200): void
+    {
+        http_response_code($status);
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode($payload, JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    private function logScheduleDebug(array $data): void
+    {
+        try {
+            $dir = __DIR__ . '/../../../../logs';
+            if (!is_dir($dir)) {
+                mkdir($dir, 0777, true);
+            }
+            $line = date('Y-m-d H:i:s') . ' ' . json_encode($data, JSON_UNESCAPED_UNICODE) . PHP_EOL;
+            file_put_contents($dir . '/os_schedule_debug.log', $line, FILE_APPEND);
+        } catch (\Throwable $e) {
+            // ignora erro de log
+        }
+    }
+
+    private function normalizarProgramadaPara(?string $value): ?string
+    {
+        $raw = trim((string)$value);
+        if ($raw === '') {
+            return null;
+        }
+
+        $formats = [
+            'd/m/Y H:i:s',
+            'd/m/Y H:i',
+            'd/m/Y',
+            'Y-m-d H:i:s',
+            'Y-m-d H:i',
+            'Y-m-d\TH:i:s',
+            'Y-m-d\TH:i',
+            'Y-m-d',
+        ];
+
+        foreach ($formats as $format) {
+            $dt = \DateTime::createFromFormat($format, $raw);
+            if (!$dt) {
+                continue;
+            }
+
+            $errors = \DateTime::getLastErrors();
+            $warningCount = is_array($errors) ? (int)($errors['warning_count'] ?? 0) : 0;
+            $errorCount = is_array($errors) ? (int)($errors['error_count'] ?? 0) : 0;
+            if ($warningCount > 0 || $errorCount > 0) {
+                continue;
+            }
+
+            if ($dt->format($format) !== $raw) {
+                continue;
+            }
+
+            if (in_array($format, ['Y-m-d', 'd/m/Y'], true)) {
+                $dt->setTime(0, 0, 0);
+            } elseif (in_array($format, ['Y-m-d\TH:i', 'Y-m-d H:i', 'd/m/Y H:i'], true)) {
+                $dt->setTime((int)$dt->format('H'), (int)$dt->format('i'), 0);
+            }
+
+            return $dt->format('Y-m-d H:i:s');
+        }
+
+        return null;
+    }
     public function index(): void
     {
         if (!has_permission('os.view')) {
@@ -39,18 +107,26 @@ class OrdensServicoController
             'veiculo_id' => $_GET['veiculo_id'] ?? null,
             'q' => trim($_GET['q'] ?? ''),
         ];
+        $agendaDate = $_GET['agenda_date'] ?? date('Y-m-d');
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $agendaDate)) {
+            $agendaDate = date('Y-m-d');
+        }
+
         try {
             $orders = $this->osModel->listar($filters);
             $veiculos = $this->osModel->listarVeiculos();
+            $executores = $this->osModel->listarExecutantes();
         } catch (\Throwable $e) {
             flash('error', 'Erro ao carregar OS: ' . $e->getMessage());
-            $orders = $veiculos = [];
+            $orders = $veiculos = $executores = [];
         }
         View::render('Manutencao', 'os/index', [
-            'title' => 'Ordens de Servico',
+            'title' => 'Planejamento de Ordens de Servico',
             'orders' => $orders,
             'veiculos' => $veiculos,
+            'executores' => $executores,
             'filters' => $filters,
+            'agendaDate' => $agendaDate,
         ]);
     }
 
@@ -121,6 +197,110 @@ class OrdensServicoController
             'attachments' => $attachments,
             'timeline' => $timeline,
             'ssList' => $ssList,
+        ]);
+    }
+
+    public function assignExecutor(): void
+    {
+        if (!has_permission('os.manage')) {
+            $this->json(['ok' => false, 'message' => 'Sem permissao.'], 403);
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->json(['ok' => false, 'message' => 'Metodo invalido.'], 405);
+        }
+
+        $osId = (int)($_POST['os_id'] ?? 0);
+        $executorId = (int)($_POST['executor_id'] ?? 0);
+        $programadaParaRaw = trim((string)($_POST['programada_para'] ?? ''));
+        $programadaPara = $this->normalizarProgramadaPara($programadaParaRaw);
+        $actorUserId = current_user()['id'] ?? null;
+
+        $this->logScheduleDebug([
+            'stage' => 'request',
+            'os_id' => $osId,
+            'executor_id_raw' => $_POST['executor_id'] ?? null,
+            'executor_id_norm' => $executorId > 0 ? $executorId : null,
+            'programada_raw' => $programadaParaRaw,
+            'programada_norm' => $programadaPara,
+            'user_id' => $actorUserId,
+        ]);
+
+        if ($osId <= 0) {
+            $this->json(['ok' => false, 'message' => 'OS invalida.'], 422);
+        }
+
+        if ($programadaParaRaw !== '' && $programadaPara === null) {
+            $this->logScheduleDebug([
+                'stage' => 'invalid_datetime',
+                'os_id' => $osId,
+                'programada_raw' => $programadaParaRaw,
+            ]);
+            $this->json(['ok' => false, 'message' => 'Data/hora programada invalida.'], 422);
+        }
+
+        $ok = $this->osModel->agendarExecutor(
+            $osId,
+            $executorId > 0 ? $executorId : null,
+            $programadaPara,
+            $actorUserId
+        );
+
+        if (!$ok) {
+            $this->logScheduleDebug([
+                'stage' => 'save_failed',
+                'os_id' => $osId,
+                'executor_id_norm' => $executorId > 0 ? $executorId : null,
+                'programada_norm' => $programadaPara,
+            ]);
+            $this->json(['ok' => false, 'message' => 'Nao foi possivel salvar planejamento.'], 500);
+        }
+
+        $savedSchedule = $this->osModel->obterAgendamento($osId);
+        $requestedExecutor = $executorId > 0 ? $executorId : null;
+        $savedExecutor = $savedSchedule['executor_id'] ?? null;
+        $savedExecutorNome = $savedSchedule['executor_nome'] ?? null;
+        $savedProgramada = $savedSchedule['programada_para'] ?? null;
+
+        if (($programadaPara !== null && $savedProgramada !== $programadaPara)
+            || (($savedExecutor !== null ? (int)$savedExecutor : null) !== $requestedExecutor)) {
+            $this->logScheduleDebug([
+                'stage' => 'mismatch_after_save',
+                'os_id' => $osId,
+                'requested_programada' => $programadaPara,
+                'saved_programada' => $savedProgramada,
+                'requested_executor' => $requestedExecutor,
+                'saved_executor' => $savedExecutor,
+            ]);
+            $this->json([
+                'ok' => false,
+                'message' => 'Planejamento salvo com divergencia. Recarregue a pagina e tente novamente.',
+                'requested_programada' => $programadaPara,
+                'saved_programada' => $savedProgramada,
+                'requested_executor' => $requestedExecutor,
+                'saved_executor' => $savedExecutor,
+            ], 409);
+        }
+
+        $this->auditoria->registrar('os', $osId, 'schedule_assign', null, [
+            'executor_id' => $savedExecutor,
+            'executor_nome' => $savedExecutorNome,
+            'programada_para' => $savedProgramada,
+        ], $actorUserId);
+
+        $this->logScheduleDebug([
+            'stage' => 'saved',
+            'os_id' => $osId,
+            'executor_id' => $savedExecutor,
+            'executor_nome' => $savedExecutorNome,
+            'programada_para' => $savedProgramada,
+        ]);
+
+        $this->json([
+            'ok' => true,
+            'executor_id' => $savedExecutor,
+            'executor_nome' => $savedExecutorNome,
+            'programada_para' => $savedProgramada,
         ]);
     }
 
@@ -202,3 +382,6 @@ class OrdensServicoController
         header('Location: index.php?mod=manutencao&ctrl=OrdensServico&action=show&id=' . $osId);
     }
 }
+
+
+

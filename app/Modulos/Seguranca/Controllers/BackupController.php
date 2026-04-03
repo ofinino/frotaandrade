@@ -31,7 +31,7 @@ class BackupController
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $config['local_path'] = trim($_POST['local_path'] ?? $config['local_path']);
+            $config['local_path'] = trim($_POST['local_path'] ?? '');
             $config['drive_path'] = trim($_POST['drive_path'] ?? $config['drive_path']);
             $config['mysqldump_path'] = trim($_POST['mysqldump_path'] ?? $config['mysqldump_path']);
             $config['schedule'] = $_POST['schedule'] ?? $config['schedule'];
@@ -50,6 +50,7 @@ class BackupController
             'result' => $result,
         ]);
     }
+
 
     private function shouldRunAuto(array $config): bool
     {
@@ -80,7 +81,13 @@ class BackupController
         $dbPass = $GLOBALS['config']['db_pass'] ?? '';
 
         $timestamp = (new \DateTime())->format('Ymd_His');
-        $dumpDir = rtrim($config['local_path'] ?: 'C:\\backups\\db', '\\/');
+
+        // Define um diretório padrão seguro dentro da home do usuário no Linux ou raiz no Windows
+        $basePath = dirname(__DIR__, 4);
+        $defaultDir = $basePath . DIRECTORY_SEPARATOR . 'backups' . DIRECTORY_SEPARATOR . 'db';
+        
+        $dumpDir = $config['local_path'] ? rtrim($config['local_path'], '\\/') : $defaultDir;
+
         $dumpFile = $dumpDir . DIRECTORY_SEPARATOR . $dbName . '_' . $timestamp . '.sql';
 
         if (!is_dir($dumpDir)) {
@@ -140,22 +147,33 @@ class BackupController
             $output[] = 'open_basedir: ' . (ini_get('open_basedir') ?: '(vazio)');
             $output[] = 'PATH: ' . (getenv('PATH') ?: '(vazio)');
         } else {
-            // monta comando com redirecionamento de stderr
+            // Define a senha via variável de ambiente para evitar problemas de escape no shell
+            // e silenciar o aviso de "password on command line interface" do mysqldump.
+            putenv("MYSQL_PWD=" . $dbPass);
+
+            // Redireciona stderr para stdout (2>&1) para captura pelo PHP, 
+            // mas direciona o dump real (stdout) para o arquivo (>).
+            // A ordem '2>&1 > arquivo' garante que erros vão para o array $output e dados para o arquivo.
             $cmd = sprintf(
-                '"%s" -h "%s" -u "%s" -p%s "%s" > "%s" 2>&1',
+                '"%s" -h %s -u %s %s 2>&1 > "%s"',
                 $resolved,
-                $dbHost,
-                $dbUser,
-                $dbPass,
-                $dbName,
+                escapeshellarg($dbHost),
+                escapeshellarg($dbUser),
+                escapeshellarg($dbName),
                 $dumpFile
             );
 
             exec($cmd, $output, $exitCode);
+            putenv("MYSQL_PWD="); // Limpa a variável após o uso
 
             $status = ($exitCode === 0 && file_exists($dumpFile) && filesize($dumpFile) > 0)
                 ? 'Backup gerado: ' . $dumpFile
                 : 'Falha ao gerar backup. Código: ' . $exitCode;
+
+            // Se falhou, remove o arquivo que pode conter apenas mensagens de erro
+            if ($exitCode !== 0 && file_exists($dumpFile)) {
+                @unlink($dumpFile);
+            }
 
             // anexa diagnóstico
             $output[] = 'binario usado: ' . $resolved;
@@ -190,10 +208,14 @@ class BackupController
 
     private function defaultDumpPath(): string
     {
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
         $local = realpath(__DIR__ . '/../../../bin/mysqldump.exe');
         if ($local !== false) {
             return $local;
         }
         return 'C:\\backups\\bin\\mysqldump.exe';
+        }
+        return 'mysqldump';
     }
+
 }

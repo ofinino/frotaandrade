@@ -33,11 +33,15 @@ class BackupModel
     {
         $stmt = $this->db->query("SELECT * FROM seg_backup_config WHERE id = 1");
         $cfg = $stmt->fetch() ?: null;
+        
+        $isWin = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
         $defaultDump = $this->defaultDumpPath();
+        $defaultLocal = $isWin ? 'C:\\backups\\db' : dirname(__DIR__, 4) . '/backups/db';
+
         if (!$cfg) {
             $default = [
                 'id' => 1,
-                'local_path' => 'C:\\backups\\db',
+                'local_path' => $defaultLocal,
                 'drive_path' => '',
                 'mysqldump_path' => $defaultDump,
                 'schedule' => 'manual',
@@ -58,13 +62,16 @@ class BackupModel
 
     public function saveConfig(array $data): void
     {
+        $isWin = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+        $defaultLocal = $isWin ? 'C:\\backups\\db' : dirname(__DIR__, 4) . '/backups/db';
+
         $stmt = $this->db->prepare("REPLACE INTO seg_backup_config
             (id, local_path, drive_path, mysqldump_path, schedule, daily_hour, last_run_at, last_status, last_error)
             VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
-            $data['local_path'] ?? 'C:\\backups\\db',
+            !empty($data['local_path']) ? $data['local_path'] : $defaultLocal,
             $data['drive_path'] ?? '',
-            $data['mysqldump_path'] ?? 'C:\\xampp\\mysql\\bin\\mysqldump.exe',
+            !empty($data['mysqldump_path']) ? $data['mysqldump_path'] : $this->defaultDumpPath(),
             $data['schedule'] ?? 'manual',
             $data['daily_hour'] ?? '02:00',
             $data['last_run_at'] ?? null,
