@@ -648,8 +648,8 @@ function render_header(string $title = 'Painel'): void
                 </div>
                         </header>
 
-            <main class="w-full px-0 py-3">
-                <div class="content-inner space-y-4">
+            <main class="w-full px-0 py-1">
+                <div class="content-inner space-y-2">
                 <?php if ($msg = flash('success')): ?>
                     <div class="bg-emerald-100 border border-emerald-300 text-emerald-900 px-4 py-3 rounded"><?= sanitize($msg) ?></div>
                 <?php endif; ?>

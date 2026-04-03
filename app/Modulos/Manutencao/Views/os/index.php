@@ -139,7 +139,7 @@ html.os-agenda-lock .os-page-wrap {
         height: calc(100dvh - 52px);
     }
 }
-.os-header-sticky { position:sticky; top:56px; z-index:25; }
+.os-header-sticky { position:sticky; top:0; z-index:25; }
 .os-header-sticky .card-body { padding-top:0 !important; }
 .os-header-sticky #os-filter-panel { margin-top:0 !important; }
 .os-compact-card .card-body { padding:0 10px 8px; }
@@ -424,7 +424,7 @@ html.os-agenda-lock .os-page-wrap {
   .os-pill { white-space:nowrap; }
 }
 @media (max-width: 991px) {
-  .os-header-sticky { top:52px; }
+  .os-header-sticky { top:0; }
   .os-filter-topline, .os-filter-bottomline { width:100%; }
   .os-filter-topline { flex-direction:column; align-items:stretch; }
   .os-mode-switch, .os-view-switch { width:100%; }
@@ -1442,23 +1442,3 @@ html.os-agenda-lock .os-page-wrap {
     });
 })();
 </script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
