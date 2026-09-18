@@ -28,8 +28,8 @@ class PeopleController
 
         $editingId = isset($_GET['edit']) ? (int) $_GET['edit'] : null;
 
-        if (isset($_GET['delete'])) {
-            $this->delete((int) $_GET['delete']);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
+            $this->delete((int) $_POST['delete']);
             return;
         }
 
@@ -41,7 +41,7 @@ class PeopleController
         try {
             $people = $this->model->listar();
         } catch (\Throwable $e) {
-            flash('error', 'Erro ao carregar pessoas: ' . $e->getMessage());
+            flash_error('Erro ao carregar pessoas.', $e);
             $people = [];
         }
         $editPerson = null;
@@ -102,7 +102,7 @@ class PeopleController
             $this->model->excluir($id);
             flash('success', 'Pessoa removida.');
         } catch (\Throwable $e) {
-            flash('error', 'Erro ao remover pessoa: ' . $e->getMessage());
+            flash_error('Erro ao remover pessoa.', $e);
         }
         header('Location: index.php?page=people');
         exit;

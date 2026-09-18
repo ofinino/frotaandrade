@@ -155,12 +155,12 @@ class BackupController
             // mas direciona o dump real (stdout) para o arquivo (>).
             // A ordem '2>&1 > arquivo' garante que erros vão para o array $output e dados para o arquivo.
             $cmd = sprintf(
-                '"%s" -h %s -u %s %s 2>&1 > "%s"',
-                $resolved,
+                '%s -h %s -u %s %s 2>&1 > %s',
+                escapeshellarg($resolved),
                 escapeshellarg($dbHost),
                 escapeshellarg($dbUser),
                 escapeshellarg($dbName),
-                $dumpFile
+                escapeshellarg($dumpFile)
             );
 
             exec($cmd, $output, $exitCode);

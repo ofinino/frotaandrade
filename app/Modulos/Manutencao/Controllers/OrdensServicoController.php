@@ -35,66 +35,6 @@ class OrdensServicoController
         exit;
     }
 
-    private function logScheduleDebug(array $data): void
-    {
-        try {
-            $dir = __DIR__ . '/../../../../logs';
-            if (!is_dir($dir)) {
-                mkdir($dir, 0777, true);
-            }
-            $line = date('Y-m-d H:i:s') . ' ' . json_encode($data, JSON_UNESCAPED_UNICODE) . PHP_EOL;
-            file_put_contents($dir . '/os_schedule_debug.log', $line, FILE_APPEND);
-        } catch (\Throwable $e) {
-            // ignora erro de log
-        }
-    }
-
-    private function normalizarProgramadaPara(?string $value): ?string
-    {
-        $raw = trim((string)$value);
-        if ($raw === '') {
-            return null;
-        }
-
-        $formats = [
-            'd/m/Y H:i:s',
-            'd/m/Y H:i',
-            'd/m/Y',
-            'Y-m-d H:i:s',
-            'Y-m-d H:i',
-            'Y-m-d\TH:i:s',
-            'Y-m-d\TH:i',
-            'Y-m-d',
-        ];
-
-        foreach ($formats as $format) {
-            $dt = \DateTime::createFromFormat($format, $raw);
-            if (!$dt) {
-                continue;
-            }
-
-            $errors = \DateTime::getLastErrors();
-            $warningCount = is_array($errors) ? (int)($errors['warning_count'] ?? 0) : 0;
-            $errorCount = is_array($errors) ? (int)($errors['error_count'] ?? 0) : 0;
-            if ($warningCount > 0 || $errorCount > 0) {
-                continue;
-            }
-
-            if ($dt->format($format) !== $raw) {
-                continue;
-            }
-
-            if (in_array($format, ['Y-m-d', 'd/m/Y'], true)) {
-                $dt->setTime(0, 0, 0);
-            } elseif (in_array($format, ['Y-m-d\TH:i', 'Y-m-d H:i', 'd/m/Y H:i'], true)) {
-                $dt->setTime((int)$dt->format('H'), (int)$dt->format('i'), 0);
-            }
-
-            return $dt->format('Y-m-d H:i:s');
-        }
-
-        return null;
-    }
     public function index(): void
     {
         if (!has_permission('os.view')) {
@@ -117,7 +57,7 @@ class OrdensServicoController
             $veiculos = $this->osModel->listarVeiculos();
             $executores = $this->osModel->listarExecutantes();
         } catch (\Throwable $e) {
-            flash('error', 'Erro ao carregar OS: ' . $e->getMessage());
+            flash_error('Erro ao carregar OS.', $e);
             $orders = $veiculos = $executores = [];
         }
         View::render('Manutencao', 'os/index', [
@@ -153,11 +93,32 @@ class OrdensServicoController
             header('Location: index.php?page=os');
             return;
         }
+        $veiculoId = (int)($_POST['veiculo_id'] ?? 0);
+        $status = $_POST['status'] ?? 'aprovada';
+        $allowedStatus = ['rascunho', 'aprovada'];
+        $odometro = $_POST['odometro_abertura'] ?? null;
+
+        if (!$veiculoId || !$this->osModel->veiculoValido($veiculoId)) {
+            flash('error', 'Veiculo invalido.');
+            header('Location: index.php?page=os&action=create');
+            return;
+        }
+        if (!in_array($status, $allowedStatus, true)) {
+            flash('error', 'Status invalido.');
+            header('Location: index.php?page=os&action=create');
+            return;
+        }
+        if ($odometro !== null && $odometro !== '' && !is_numeric($odometro)) {
+            flash('error', 'Odometro invalido.');
+            header('Location: index.php?page=os&action=create');
+            return;
+        }
+
         $userId = current_user()['id'] ?? null;
         $payload = [
-            'veiculo_id' => $_POST['veiculo_id'] ?? null,
-            'status' => $_POST['status'] ?? 'aprovada',
-            'odometro_abertura' => $_POST['odometro_abertura'] ?? null,
+            'veiculo_id' => $veiculoId,
+            'status' => $status,
+            'odometro_abertura' => $odometro !== '' ? $odometro : null,
             'observacoes' => $_POST['observacoes'] ?? null,
             'aberta_por' => $userId,
             'aberta_em' => date('Y-m-d H:i:s'),
@@ -213,29 +174,14 @@ class OrdensServicoController
         $osId = (int)($_POST['os_id'] ?? 0);
         $executorId = (int)($_POST['executor_id'] ?? 0);
         $programadaParaRaw = trim((string)($_POST['programada_para'] ?? ''));
-        $programadaPara = $this->normalizarProgramadaPara($programadaParaRaw);
+        $programadaPara = $this->osModel->normalizarProgramadaPara($programadaParaRaw);
         $actorUserId = current_user()['id'] ?? null;
 
-        $this->logScheduleDebug([
-            'stage' => 'request',
-            'os_id' => $osId,
-            'executor_id_raw' => $_POST['executor_id'] ?? null,
-            'executor_id_norm' => $executorId > 0 ? $executorId : null,
-            'programada_raw' => $programadaParaRaw,
-            'programada_norm' => $programadaPara,
-            'user_id' => $actorUserId,
-        ]);
-
-        if ($osId <= 0) {
+        if ($osId <= 0 || !$this->osModel->obter($osId)) {
             $this->json(['ok' => false, 'message' => 'OS invalida.'], 422);
         }
 
         if ($programadaParaRaw !== '' && $programadaPara === null) {
-            $this->logScheduleDebug([
-                'stage' => 'invalid_datetime',
-                'os_id' => $osId,
-                'programada_raw' => $programadaParaRaw,
-            ]);
             $this->json(['ok' => false, 'message' => 'Data/hora programada invalida.'], 422);
         }
 
@@ -247,12 +193,6 @@ class OrdensServicoController
         );
 
         if (!$ok) {
-            $this->logScheduleDebug([
-                'stage' => 'save_failed',
-                'os_id' => $osId,
-                'executor_id_norm' => $executorId > 0 ? $executorId : null,
-                'programada_norm' => $programadaPara,
-            ]);
             $this->json(['ok' => false, 'message' => 'Nao foi possivel salvar planejamento.'], 500);
         }
 
@@ -264,14 +204,6 @@ class OrdensServicoController
 
         if (($programadaPara !== null && $savedProgramada !== $programadaPara)
             || (($savedExecutor !== null ? (int)$savedExecutor : null) !== $requestedExecutor)) {
-            $this->logScheduleDebug([
-                'stage' => 'mismatch_after_save',
-                'os_id' => $osId,
-                'requested_programada' => $programadaPara,
-                'saved_programada' => $savedProgramada,
-                'requested_executor' => $requestedExecutor,
-                'saved_executor' => $savedExecutor,
-            ]);
             $this->json([
                 'ok' => false,
                 'message' => 'Planejamento salvo com divergencia. Recarregue a pagina e tente novamente.',
@@ -287,14 +219,6 @@ class OrdensServicoController
             'executor_nome' => $savedExecutorNome,
             'programada_para' => $savedProgramada,
         ], $actorUserId);
-
-        $this->logScheduleDebug([
-            'stage' => 'saved',
-            'os_id' => $osId,
-            'executor_id' => $savedExecutor,
-            'executor_nome' => $savedExecutorNome,
-            'programada_para' => $savedProgramada,
-        ]);
 
         $this->json([
             'ok' => true,
@@ -313,6 +237,12 @@ class OrdensServicoController
         }
         $id = (int)($_POST['os_id'] ?? 0);
         $status = $_POST['status'] ?? '';
+        $allowedStatus = ['rascunho', 'aprovada', 'programada', 'em_execucao', 'aguardando_pecas', 'concluida', 'encerrada', 'cancelada'];
+        if (!$id || !$this->osModel->obter($id) || !in_array($status, $allowedStatus, true)) {
+            flash('error', 'OS invalida ou status invalido.');
+            header('Location: index.php?page=os');
+            return;
+        }
         $this->osModel->mudarStatus($id, $status);
         $this->auditoria->registrar('os', $id, 'status', null, ['status' => $status], current_user()['id'] ?? null);
         flash('success', 'Status atualizado.');
@@ -328,7 +258,7 @@ class OrdensServicoController
         }
         $osId = (int)($_POST['os_id'] ?? 0);
         $titulo = trim($_POST['titulo'] ?? '');
-        if ($osId && $titulo !== '') {
+        if ($osId && $titulo !== '' && $this->osModel->obter($osId)) {
             $this->osModel->addItem($osId, [
                 'titulo' => $titulo,
                 'descricao' => $_POST['descricao'] ?? '',
@@ -348,7 +278,7 @@ class OrdensServicoController
         }
         $osId = (int)($_POST['os_id'] ?? 0);
         $desc = trim($_POST['descricao'] ?? '');
-        if ($osId && $desc !== '') {
+        if ($osId && $desc !== '' && $this->osModel->obter($osId)) {
             $this->osModel->addMaoDeObra($osId, [
                 'descricao' => $desc,
                 'executor_id' => $_POST['executor_id'] ?? null,
@@ -369,7 +299,7 @@ class OrdensServicoController
         }
         $osId = (int)($_POST['os_id'] ?? 0);
         $desc = trim($_POST['descricao'] ?? '');
-        if ($osId && $desc !== '') {
+        if ($osId && $desc !== '' && $this->osModel->obter($osId)) {
             $this->osModel->addPeca($osId, [
                 'descricao' => $desc,
                 'part_number' => $_POST['part_number'] ?? null,

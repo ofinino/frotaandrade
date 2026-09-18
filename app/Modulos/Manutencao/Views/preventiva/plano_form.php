@@ -27,6 +27,7 @@ $tasks = $plan['tasks'] ?? [];
             </div>
 
             <form method="post" action="index.php?page=planos_preventiva&action=save" class="row g-3">
+<?= csrf_field() ?>
                 <input type="hidden" name="id" value="<?= sanitize($plan['id'] ?? '') ?>">
 
                 <div class="col-md-6">

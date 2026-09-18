@@ -856,6 +856,7 @@ html.os-agenda-lock .os-page-wrap {
 </div>
 
 <script>
+const CSRF_TOKEN = <?= json_encode(csrf_token()) ?>;
 (function() {
     const agendaView = document.getElementById('os-agenda-view');
     const listaView = document.getElementById('os-lista-view');
@@ -1312,6 +1313,7 @@ html.os-agenda-lock .os-page-wrap {
 
     async function persistSchedule(osId, executorId, programadaPara) {
         const body = new URLSearchParams();
+        body.append('csrf_token', CSRF_TOKEN);
         body.append('os_id', osId);
         if (executorId) {
             body.append('executor_id', executorId);

@@ -14,6 +14,7 @@ $editPerson = $editPerson ?? null;
             </button>
         </div>
         <form method="post" id="people-form" class="space-y-3">
+<?= csrf_field() ?>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div class="sm:col-span-2">
                     <label class="block text-sm text-slate-600 mb-1">Nome completo</label>
@@ -88,7 +89,11 @@ $editPerson = $editPerson ?? null;
                                 <td class="py-2 text-slate-600"><?= sanitize($p['rg'] ?? '') ?></td>
                                 <td class="py-2 text-right space-x-2">
                                     <a class="text-amber-600" href="index.php?page=people&edit=<?= $p['id'] ?>">Editar</a>
-                                    <a class="text-rose-600" href="index.php?page=people&delete=<?= $p['id'] ?>" onclick="return confirm('Excluir pessoa?');">Excluir</a>
+                                    <form method="post" class="inline-block" onsubmit="return confirm('Excluir pessoa?');">
+<?= csrf_field() ?>
+                                        <input type="hidden" name="delete" value="<?= (int) $p['id'] ?>">
+                                        <button type="submit" class="text-rose-600 bg-transparent border-0 p-0 cursor-pointer">Excluir</button>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

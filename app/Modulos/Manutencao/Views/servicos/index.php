@@ -106,19 +106,23 @@ $origemLabels = [
                             <td class="text-nowrap table-actions">
                                 <?php if (has_permission('ss.manage')): ?>
                                     <form method="post" onsubmit="return confirm('Converter em OS?');">
+<?= csrf_field() ?>
                                         <input type="hidden" name="convert_ss" value="<?= sanitize($ss['id']) ?>">
                                         <button class="btn btn-link btn-sm p-0">Converter</button>
                                     </form>
                                     <form method="post" onsubmit="return confirm('Encerrar SS?');">
+<?= csrf_field() ?>
                                         <input type="hidden" name="close_ss" value="<?= sanitize($ss['id']) ?>">
                                         <button class="btn btn-link btn-sm text-success p-0">Encerrar</button>
                                     </form>
                                     <form method="post" onsubmit="return confirm('Rejeitar SS?');">
+<?= csrf_field() ?>
                                         <input type="hidden" name="reject_ss" value="<?= sanitize($ss['id']) ?>">
                                         <input type="hidden" name="motivo" value="Rejeitada pela gestao">
                                         <button class="btn btn-link btn-sm text-danger p-0">Rejeitar</button>
                                     </form>
                                     <form method="post" class="d-inline-flex align-items-center gap-1">
+<?= csrf_field() ?>
                                         <input type="hidden" name="link_ss" value="1">
                                         <input type="hidden" name="ss_id" value="<?= sanitize($ss['id']) ?>">
                                         <select name="os_id" class="form-select form-select-sm w-auto">

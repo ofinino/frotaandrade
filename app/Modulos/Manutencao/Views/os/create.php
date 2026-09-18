@@ -5,6 +5,7 @@ $ssList = $ssList ?? [];
 <div class="container py-4">
     <h3>Nova Ordem de Servico</h3>
     <form method="post" action="index.php?mod=manutencao&ctrl=OrdensServico&action=store" class="row g-3">
+<?= csrf_field() ?>
         <div class="col-md-4">
             <label class="form-label">Veiculo</label>
             <select class="form-select" name="veiculo_id">

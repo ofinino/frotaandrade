@@ -54,6 +54,7 @@ class AnexosModel
     public function salvar(string $ownerType, int $ownerId, array $files, int $userId): array
     {
         $permitidos = ['image/jpeg','image/png','image/webp','image/gif'];
+        $extPorMime = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
         $maxBytes = 5 * 1024 * 1024;
         $normalizados = $this->normalizarArquivos($files);
         $salvos = [];
@@ -64,12 +65,11 @@ class AnexosModel
             if ($file['size'] > $maxBytes) {
                 continue;
             }
-            $mime = $file['type'];
-            if (!in_array($mime, $permitidos, true)) {
+            $mime = detect_upload_mime($file['tmp']);
+            if (!$mime || !in_array($mime, $permitidos, true)) {
                 continue;
             }
-            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            $safeExt = preg_replace('/[^a-z0-9]+/', '', $ext) ?: 'jpg';
+            $safeExt = $extPorMime[$mime];
             $filename = uniqid($ownerType . '_', true) . '.' . $safeExt;
             $dest = $dir . DIRECTORY_SEPARATOR . $filename;
             $moved = @move_uploaded_file($file['tmp'], $dest);

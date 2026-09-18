@@ -5,6 +5,12 @@ class MediaController
 {
     public function serve(): void
     {
+        if (!current_user()) {
+            http_response_code(403);
+            echo 'Acesso negado.';
+            return;
+        }
+
         try {
             $requested = $_GET['f'] ?? '';
             $requested = is_string($requested) ? urldecode($requested) : '';

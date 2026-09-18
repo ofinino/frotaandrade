@@ -61,6 +61,7 @@ $statusClass = $statusColors[$statusKey] ?? 'bg-slate-100 text-slate-700';
             <?php if (has_permission('os.manage')): ?>
                 <div class="mt-4 border-t border-slate-100 pt-4">
                     <form class="flex flex-wrap items-center gap-2" method="post" action="index.php?mod=manutencao&ctrl=OrdensServico&action=changeStatus">
+<?= csrf_field() ?>
                         <input type="hidden" name="os_id" value="<?= sanitize($os['id'] ?? '') ?>">
                         <label class="text-sm font-medium text-slate-700">Status</label>
                         <select class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm" name="status">
@@ -122,6 +123,7 @@ $statusClass = $statusColors[$statusKey] ?? 'bg-slate-100 text-slate-700';
 
             <?php if (has_permission('os.manage')): ?>
                 <form class="mt-5 space-y-3" method="post" action="index.php?mod=manutencao&ctrl=OrdensServico&action=addItem">
+<?= csrf_field() ?>
                     <input type="hidden" name="os_id" value="<?= sanitize($os['id'] ?? '') ?>">
                     <div>
                         <label class="text-sm font-medium text-slate-700">Novo item</label>
@@ -161,6 +163,7 @@ $statusClass = $statusColors[$statusKey] ?? 'bg-slate-100 text-slate-700';
 
             <?php if (has_permission('os.manage')): ?>
                 <form class="mt-5" method="post" action="index.php?mod=manutencao&ctrl=OrdensServico&action=addItem">
+<?= csrf_field() ?>
                     <input type="hidden" name="os_id" value="<?= sanitize($os['id'] ?? '') ?>">
                     <label class="text-sm font-medium text-slate-700">Vincular SS</label>
                     <select class="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" name="ss_ids[]" multiple>
@@ -191,6 +194,7 @@ $statusClass = $statusColors[$statusKey] ?? 'bg-slate-100 text-slate-700';
 
             <?php if (has_permission('os.manage')): ?>
                 <form class="mt-5 grid grid-cols-1 md:grid-cols-4 gap-2" method="post" action="index.php?mod=manutencao&ctrl=OrdensServico&action=addLabor">
+<?= csrf_field() ?>
                     <input type="hidden" name="os_id" value="<?= sanitize($os['id'] ?? '') ?>">
                     <input class="rounded-lg border border-slate-200 px-3 py-2 text-sm md:col-span-2" name="descricao" placeholder="Descrição" required>
                     <input class="rounded-lg border border-slate-200 px-3 py-2 text-sm" name="horas" type="number" step="0.1" placeholder="Horas">
@@ -218,6 +222,7 @@ $statusClass = $statusColors[$statusKey] ?? 'bg-slate-100 text-slate-700';
 
             <?php if (has_permission('os.manage')): ?>
                 <form class="mt-5 grid grid-cols-1 md:grid-cols-6 gap-2" method="post" action="index.php?mod=manutencao&ctrl=OrdensServico&action=addPart">
+<?= csrf_field() ?>
                     <input type="hidden" name="os_id" value="<?= sanitize($os['id'] ?? '') ?>">
                     <input class="rounded-lg border border-slate-200 px-3 py-2 text-sm md:col-span-2" name="descricao" placeholder="Descrição" required>
                     <input class="rounded-lg border border-slate-200 px-3 py-2 text-sm" name="part_number" placeholder="Código">

@@ -2,6 +2,7 @@
 <div class="container py-4">
     <h3>Nova SS manual</h3>
     <form method="post" action="index.php?page=servicos" enctype="multipart/form-data" class="row g-3">
+<?= csrf_field() ?>
         <input type="hidden" name="create_ss" value="1">
         <div class="col-12">
             <label class="form-label">Titulo</label>

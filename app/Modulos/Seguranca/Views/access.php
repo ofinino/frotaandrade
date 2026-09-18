@@ -15,6 +15,7 @@ $selectedRoleId = $selectedRoleId ?: ($roles[0]['id'] ?? 0);
     <div class="bg-white border border-slate-100 shadow rounded-lg p-4 space-y-3">
         <div class="font-semibold text-slate-900">Criar papel</div>
         <form method="post" class="space-y-3">
+<?= csrf_field() ?>
             <input type="hidden" name="create_role" value="1" />
             <div>
                 <label class="block text-sm text-slate-600 mb-1">Nome</label>
@@ -33,6 +34,7 @@ $selectedRoleId = $selectedRoleId ?: ($roles[0]['id'] ?? 0);
             <div class="font-semibold text-slate-900">Permissoes por papel</div>
             <?php if ($selectedRoleId): ?>
                 <form method="post" onsubmit="return confirm('Remover este papel?');">
+<?= csrf_field() ?>
                     <input type="hidden" name="delete_role" value="1" />
                     <input type="hidden" name="role_id" value="<?= $selectedRoleId ?>" />
                     <button class="text-rose-600 text-sm" type="submit">Remover</button>
@@ -53,6 +55,7 @@ $selectedRoleId = $selectedRoleId ?: ($roles[0]['id'] ?? 0);
         </form>
 
         <form method="post" class="space-y-3">
+<?= csrf_field() ?>
             <input type="hidden" name="save_permissions" value="1" />
             <input type="hidden" name="role_id" value="<?= $selectedRoleId ?>" />
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -73,6 +76,7 @@ $selectedRoleId = $selectedRoleId ?: ($roles[0]['id'] ?? 0);
     <div class="bg-white border border-slate-100 shadow rounded-lg p-4 space-y-3">
         <div class="font-semibold text-slate-900">Atribuir papel ao usuario</div>
         <form method="post" class="space-y-3">
+<?= csrf_field() ?>
             <input type="hidden" name="assign_role" value="1" />
             <div>
                 <label class="block text-sm text-slate-600 mb-1">Usuario</label>
@@ -97,6 +101,7 @@ $selectedRoleId = $selectedRoleId ?: ($roles[0]['id'] ?? 0);
     <div class="bg-white border border-slate-100 shadow rounded-lg p-4 space-y-3">
         <div class="font-semibold text-slate-900">Atribuir filial</div>
         <form method="post" class="space-y-3">
+<?= csrf_field() ?>
             <input type="hidden" name="assign_branch" value="1" />
             <div>
                 <label class="block text-sm text-slate-600 mb-1">Usuario</label>
@@ -141,6 +146,7 @@ $selectedRoleId = $selectedRoleId ?: ($roles[0]['id'] ?? 0);
                             <?php if (!empty($rolesByUser[$u['id']])): ?>
                                 <?php foreach ($rolesByUser[$u['id']] as $role): ?>
                                     <form method="post" class="inline-block">
+<?= csrf_field() ?>
                                         <input type="hidden" name="remove_role" value="1" />
                                         <input type="hidden" name="user_id" value="<?= $u['id'] ?>" />
                                         <input type="hidden" name="role_id" value="<?= $role['id'] ?>" />
@@ -158,6 +164,7 @@ $selectedRoleId = $selectedRoleId ?: ($roles[0]['id'] ?? 0);
                             <?php if (!empty($branchesByUser[$u['id']])): ?>
                                 <?php foreach ($branchesByUser[$u['id']] as $branch): ?>
                                     <form method="post" class="inline-block">
+<?= csrf_field() ?>
                                         <input type="hidden" name="remove_branch" value="1" />
                                         <input type="hidden" name="user_id" value="<?= $u['id'] ?>" />
                                         <input type="hidden" name="branch_id" value="<?= $branch['id'] ?>" />

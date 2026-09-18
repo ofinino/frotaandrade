@@ -13,8 +13,9 @@ try {
         ]
     );
 } catch (PDOException $e) {
+    error_log('Erro ao conectar no banco: ' . $e->getMessage());
     http_response_code(500);
-    echo 'Erro ao conectar no banco: ' . htmlspecialchars($e->getMessage());
+    echo 'Erro ao conectar no banco. Tente novamente mais tarde.';
     exit;
 }
 
@@ -27,6 +28,61 @@ function db(): PDO
 function sanitize($value): string
 {
     return htmlspecialchars((string)($value ?? ''), ENT_QUOTES, 'UTF-8');
+}
+
+// O "type" enviado pelo navegador nao e confiavel; detecta o mime real pelo
+// conteudo do arquivo. Usado por todo upload que precisa validar tipo/extensao.
+function detect_upload_mime(string $tmpPath): ?string
+{
+    if (!is_uploaded_file($tmpPath)) {
+        return null;
+    }
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    if (!$finfo) {
+        return null;
+    }
+    $mime = finfo_file($finfo, $tmpPath) ?: null;
+    finfo_close($finfo);
+    return $mime;
+}
+
+// Loga o detalhe real da exceção (pode conter nomes de tabela/coluna/query) e
+// exibe ao usuário apenas uma mensagem genérica, evitando vazar detalhes do schema.
+function flash_error(string $userMessage, \Throwable $e, string $key = 'error'): void
+{
+    error_log($userMessage . ' | ' . $e->getMessage());
+    flash($key, $userMessage);
+}
+
+function csrf_token(): string
+{
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function csrf_field(): string
+{
+    return '<input type="hidden" name="csrf_token" value="' . sanitize(csrf_token()) . '">';
+}
+
+function csrf_verify(): bool
+{
+    $sent = $_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+    $expected = $_SESSION['csrf_token'] ?? '';
+    return $sent !== '' && $expected !== '' && hash_equals($expected, $sent);
+}
+
+function require_csrf(): void
+{
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_verify()) {
+        http_response_code(419);
+        flash('error', 'Sessão expirada ou solicitação inválida. Tente novamente.');
+        $back = $_SERVER['HTTP_REFERER'] ?? 'index.php';
+        header('Location: ' . $back);
+        exit;
+    }
 }
 
 function flash(string $key, ?string $message = null): ?string
@@ -148,7 +204,7 @@ function has_permission(string $perm): bool
         'checklist.ver' => 'checks.view',
         'checklist.editar' => 'checks.view',
         'checklist.executar' => 'checks.view',
-        'templates.gerenciar' => 'templates.view',
+        'templates.gerenciar' => 'templates.manage',
         'groups.gerenciar' => 'groups.view',
         'revision_logs.ver' => 'revision_logs.view',
         'veiculos.gerenciar' => 'vehicles.view',
@@ -161,6 +217,7 @@ function has_permission(string $perm): bool
     $reverse = [
         'checks.view' => ['checklist.ver', 'checklist.editar', 'checklist.executar'],
         'templates.view' => ['templates.gerenciar'],
+        'templates.manage' => ['templates.gerenciar'],
         'groups.view' => ['groups.gerenciar'],
         'revision_logs.view' => ['revision_logs.ver'],
         'vehicles.view' => ['veiculos.gerenciar'],

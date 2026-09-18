@@ -15,6 +15,8 @@ class Router
             exit;
         }
 
+        require_csrf();
+
         $moduleNamespace = '\\App\\Modulos\\' . ucfirst($mod) . '\\Controllers\\';
         $class = $moduleNamespace . $ctrl . 'Controller';
 

@@ -153,7 +153,7 @@ class OrdensServicoModel
         }
     }
 
-    private function normalizarProgramadaPara(?string $programadaPara): ?string
+    public function normalizarProgramadaPara(?string $programadaPara): ?string
     {
         $value = trim((string)$programadaPara);
         if ($value === '') {
@@ -441,18 +441,20 @@ class OrdensServicoModel
         } elseif ($status === 'encerrada') {
             $dates['encerrada_em'] = date('Y-m-d H:i:s');
         }
-        $stmt = $this->db->prepare(
-            'UPDATE man_work_orders SET status = ?, iniciada_em = COALESCE(?, iniciada_em), concluida_em = COALESCE(?, concluida_em), encerrada_em = COALESCE(?, encerrada_em), updated_at = NOW()
-             WHERE id = ? AND empresa_id = ?'
-        );
-        $stmt->execute([
+        $sql = 'UPDATE man_work_orders SET status = ?, iniciada_em = COALESCE(?, iniciada_em), concluida_em = COALESCE(?, concluida_em), encerrada_em = COALESCE(?, encerrada_em), updated_at = NOW()
+             WHERE id = ? AND empresa_id = ?';
+        [$filialSql, $filialParams] = $this->filialWhere('');
+        $sql .= $filialSql;
+        $params = array_merge([
             $status,
             $dates['iniciada_em'],
             $dates['concluida_em'],
             $dates['encerrada_em'],
             $id,
             $this->empresaId,
-        ]);
+        ], $filialParams);
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
         return $stmt->rowCount();
     }
 
@@ -561,6 +563,18 @@ class OrdensServicoModel
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
+    }
+
+    public function veiculoValido(int $veiculoId): bool
+    {
+        $sql = 'SELECT 1 FROM cad_veiculos WHERE id = ? AND empresa_id = ?';
+        $params = [$veiculoId, $this->empresaId];
+        [$filialSql, $filialParams] = $this->filialWhere('', 'cad_veiculos');
+        $sql .= $filialSql;
+        $params = array_merge($params, $filialParams);
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (bool) $stmt->fetchColumn();
     }
 
     public function vincularServiceRequests(int $osId, array $ssIds): void

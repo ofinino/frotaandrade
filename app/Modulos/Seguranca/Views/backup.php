@@ -16,6 +16,7 @@ $result = $result ?? null;
     </div>
 
     <form method="post" class="space-y-4">
+<?= csrf_field() ?>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
                 <label class="block text-sm text-slate-600 mb-1">Pasta local para salvar</label>
