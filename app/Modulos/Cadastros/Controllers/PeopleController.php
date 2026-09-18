@@ -63,32 +63,41 @@ class PeopleController
 
     private function save(?int $editingId): void
     {
-        $name = trim($_POST['name'] ?? '');
-        $document = trim($_POST['document'] ?? '');
-        $phone = trim($_POST['phone'] ?? '');
-        $email = trim($_POST['email'] ?? '');
+        $nomeCompleto = trim($_POST['nome_completo'] ?? '');
+        $nomeAbreviado = trim($_POST['nome_abreviado'] ?? '');
+        $emailFunc = trim($_POST['email_func'] ?? '');
+        $telefoneFunc = trim($_POST['telefone_func'] ?? '');
+        $cpf = trim($_POST['cpf'] ?? '');
+        $rg = trim($_POST['rg'] ?? '');
+        $sexo = $_POST['sexo'] ?? '';
+        $funcaoId = trim($_POST['funcao_id'] ?? '');
+        $dataNascimento = trim($_POST['data_nascimento'] ?? '');
 
-        if ($name === '') {
+        if ($nomeCompleto === '') {
             flash('error', 'Nome e obrigatorio.');
             header('Location: index.php?page=people' . ($editingId ? '&edit=' . $editingId : ''));
             exit;
         }
 
+        $data = [
+            'nome_completo' => $nomeCompleto,
+            'nome_abreviado' => $nomeAbreviado !== '' ? $nomeAbreviado : null,
+            'email_func' => $emailFunc !== '' ? $emailFunc : null,
+            'telefone_func' => $telefoneFunc !== '' ? $telefoneFunc : null,
+            'cpf' => $cpf !== '' ? $cpf : null,
+            'rg' => $rg !== '' ? $rg : null,
+            'sexo' => $sexo !== '' ? $sexo : null,
+            'funcao_id' => $funcaoId !== '' ? (int) $funcaoId : null,
+            'data_nascimento' => $dataNascimento !== '' ? $dataNascimento : null,
+        ];
+
         if ($editingId) {
-            $this->model->atualizar($editingId, [
-                'name' => $name,
-                'document' => $document,
-                'phone' => $phone,
-                'email' => $email,
-            ]);
+            $this->model->atualizar($editingId, $data);
             flash('success', 'Pessoa atualizada.');
         } else {
-            $this->model->criar([
-                'name' => $name,
-                'document' => $document,
-                'phone' => $phone,
-                'email' => $email,
-            ]);
+            $data['filial_id'] = current_branch_id();
+            $data['criado_por'] = current_user()['id'] ?? null;
+            $this->model->criar($data);
             flash('success', 'Pessoa criada.');
         }
 
