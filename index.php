@@ -30,8 +30,9 @@ if ($isAppHost || $hasAppParams) {
             'access' => ['mod' => 'seguranca', 'ctrl' => 'Access', 'action' => 'index', 'actions' => ['index']],
             'backup' => ['mod' => 'seguranca', 'ctrl' => 'Backup', 'action' => 'index', 'actions' => ['index']],
             'cleanup' => ['mod' => 'seguranca', 'ctrl' => 'Cleanup', 'action' => 'index', 'actions' => ['index']],
-            'planos_preventiva' => ['mod' => 'manutencao', 'ctrl' => 'PlanosPreventiva', 'action' => 'index', 'actions' => ['index', 'form', 'save', 'show', 'run']],
+            'planos_preventiva' => ['mod' => 'manutencao', 'ctrl' => 'PlanosPreventiva', 'action' => 'index', 'actions' => ['index', 'create', 'store', 'show', 'publish', 'toggleStatus', 'addService', 'removeService', 'addVeiculo', 'removeVeiculo', 'run']],
             'vencimentos_preventiva' => ['mod' => 'manutencao', 'ctrl' => 'PlanosPreventiva', 'action' => 'vencimentos', 'actions' => ['vencimentos']],
+            'manutencao_servicos' => ['mod' => 'manutencao', 'ctrl' => 'ManutencaoServicos', 'action' => 'index', 'actions' => ['index', 'store', 'toggle']],
         ];
 
         if (!isset($routes[$page])) {
