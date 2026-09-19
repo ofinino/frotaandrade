@@ -27,6 +27,12 @@ $kanbanColumns = [
     'em_execucao' => 'Em Execução',
     'analise_aprovacao' => 'Análise e Aprovação',
 ];
+$kanbanHeaderColors = [
+    'solicitacao' => ['bg' => '#1e293b', 'fg' => '#ffffff', 'wash' => '#f8fafc'],
+    'aguardando_agendamento' => ['bg' => '#7c3aed', 'fg' => '#ffffff', 'wash' => '#f5f3ff'],
+    'em_execucao' => ['bg' => '#16a34a', 'fg' => '#ffffff', 'wash' => '#f0fdf4'],
+    'analise_aprovacao' => ['bg' => '#ea580c', 'fg' => '#ffffff', 'wash' => '#fff7ed'],
+];
 $kanbanCardsByStatus = ['solicitacao' => [], 'aguardando_agendamento' => [], 'em_execucao' => [], 'analise_aprovacao' => []];
 $kanbanConcluidas = [];
 foreach ($orders as $osRow) {
@@ -699,12 +705,13 @@ html.os-agenda-lock .os-page-wrap {
         <div data-kanban-panel="ativas" style="display:grid; gap:12px; grid-template-columns: repeat(4, minmax(260px, 1fr));">
             <?php foreach ($kanbanColumns as $statusKey => $label): ?>
                 <?php $cards = $kanbanCardsByStatus[$statusKey] ?? []; ?>
-                <section class="os-column" style="min-height:200px;">
-                    <div class="os-column-header">
-                        <div class="os-column-title"><?= sanitize($label) ?></div>
+                <?php $hc = $kanbanHeaderColors[$statusKey] ?? ['bg' => '#1e293b', 'fg' => '#ffffff', 'wash' => '#f8fafc']; ?>
+                <section class="os-column" style="min-height:200px; background:<?= sanitize($hc['wash']) ?>;">
+                    <div class="os-column-header" style="background:transparent; border-bottom-color:rgba(15,23,42,.08);">
+                        <span class="os-column-title" style="display:inline-flex; align-items:center; padding:4px 12px; border-radius:8px; background:<?= sanitize($hc['bg']) ?>; color:<?= sanitize($hc['fg']) ?>; font-weight:700; font-size:0.85rem;"><?= sanitize($label) ?></span>
                         <div class="os-column-count"><?= count($cards) ?></div>
                     </div>
-                    <div class="os-dropzone" data-kanban-dropzone="<?= sanitize($statusKey) ?>" style="min-height:150px;">
+                    <div class="os-dropzone" data-kanban-dropzone="<?= sanitize($statusKey) ?>" style="min-height:150px; background:transparent;">
                         <?php if (!$cards): ?>
                             <div class="os-empty">Sem OS nesta coluna.</div>
                         <?php endif; ?>
