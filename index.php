@@ -18,7 +18,7 @@ if ($isAppHost || $hasAppParams) {
             'media' => ['mod' => 'manutencao', 'ctrl' => 'Media', 'action' => 'serve', 'actions' => ['serve']],
             'videos' => ['mod' => 'manutencao', 'ctrl' => 'Videos', 'action' => 'index', 'actions' => ['index']],
             'servicos' => ['mod' => 'manutencao', 'ctrl' => 'SolicitacoesServico', 'action' => 'index', 'actions' => ['index', 'create', 'show']],
-            'os' => ['mod' => 'manutencao', 'ctrl' => 'OrdensServico', 'action' => 'index', 'actions' => ['index', 'create', 'show', 'store', 'assignExecutor', 'changeStatus', 'addItem', 'addLabor', 'addPart']],
+            'os' => ['mod' => 'manutencao', 'ctrl' => 'OrdensServico', 'action' => 'index', 'actions' => ['index', 'create', 'show', 'store', 'assignExecutor', 'changeStatus', 'changeStatusDrag', 'addItem', 'addLabor', 'addPart', 'updateItemStatus', 'linkServiceRequests', 'addPendencia', 'resolvePendencia']],
             'templates' => ['mod' => 'manutencao', 'ctrl' => 'Checklists', 'action' => 'index', 'actions' => ['index']],
             'revision_logs' => ['mod' => 'manutencao', 'ctrl' => 'Checklists', 'action' => 'logs', 'actions' => ['logs']],
             'groups' => ['mod' => 'cadastros', 'ctrl' => 'Groups', 'action' => 'index', 'actions' => ['index']],
