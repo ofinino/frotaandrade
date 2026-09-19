@@ -53,9 +53,9 @@ class AnexosModel
 
     public function salvar(string $ownerType, int $ownerId, array $files, int $userId): array
     {
-        $permitidos = ['image/jpeg','image/png','image/webp','image/gif'];
-        $extPorMime = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
-        $maxBytes = 5 * 1024 * 1024;
+        $permitidos = ['image/jpeg','image/png','image/webp','image/gif','application/pdf'];
+        $extPorMime = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif', 'application/pdf' => 'pdf'];
+        $maxBytes = 20 * 1024 * 1024;
         $normalizados = $this->normalizarArquivos($files);
         $salvos = [];
         $subdir = $ownerType === 'ss' ? 'uploads/ss' : 'uploads/os';
