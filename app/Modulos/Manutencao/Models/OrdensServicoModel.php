@@ -78,7 +78,9 @@ class OrdensServicoModel
     {
         $year = date('Y');
         $prefix = "OS-$year-";
-        $stmt = $this->db->prepare('SELECT codigo FROM man_work_orders WHERE empresa_id = ? AND codigo LIKE ? ORDER BY id DESC LIMIT 1');
+        // FOR UPDATE trava a(s) linha(s) do ano corrente ate o commit de criar(),
+        // evitando que duas criacoes concorrentes leiam o mesmo ultimo numero.
+        $stmt = $this->db->prepare('SELECT codigo FROM man_work_orders WHERE empresa_id = ? AND codigo LIKE ? ORDER BY id DESC LIMIT 1 FOR UPDATE');
         $stmt->execute([$this->empresaId, $prefix . '%']);
         $last = $stmt->fetchColumn();
         $num = 1;
@@ -378,46 +380,84 @@ class OrdensServicoModel
         $row['labor'] = $this->listarMaoDeObra($id);
         $row['parts'] = $this->listarPecas($id);
         $row['service_requests'] = $this->listarServiceRequests($id);
+        $row['pendencias'] = $this->listarPendencias($id);
         return $row;
     }
 
     public function criar(array $payload): int
     {
-        $codigo = $payload['codigo'] ?? $this->gerarCodigo();
         $filialDestino = $this->normalizarFilialId($payload['filial_id'] ?? null) ?? $this->normalizarFilialId($this->filialId);
-        $stmt = $this->db->prepare(
-            'INSERT INTO man_work_orders (empresa_id, filial_id, codigo, veiculo_id, status, odometro_abertura, odometro_fechamento, aberta_por, aberta_em, iniciada_em, concluida_em, encerrada_em, observacoes, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
-        );
-        $stmt->execute([
-            $this->empresaId,
-            $filialDestino,
-            $codigo,
-            $payload['veiculo_id'] ?? null,
-            $payload['status'] ?? 'rascunho',
-            $payload['odometro_abertura'] ?? null,
-            $payload['odometro_fechamento'] ?? null,
-            $payload['aberta_por'] ?? null,
-            $payload['aberta_em'] ?? date('Y-m-d H:i:s'),
-            $payload['iniciada_em'] ?? null,
-            $payload['concluida_em'] ?? null,
-            $payload['encerrada_em'] ?? null,
-            $payload['observacoes'] ?? null,
-        ]);
-        return (int)$this->db->lastInsertId();
+        $maxAttempts = 3;
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            $codigo = $payload['codigo'] ?? null;
+            $this->db->beginTransaction();
+            try {
+                if (!$codigo) {
+                    $codigo = $this->gerarCodigo();
+                }
+                $stmt = $this->db->prepare(
+                    'INSERT INTO man_work_orders (empresa_id, filial_id, codigo, veiculo_id, status, odometro_abertura, odometro_fechamento, aberta_por, aberta_em, iniciada_em, concluida_em, encerrada_em, observacoes, medicao_tipo, disponibilidade, prioridade, motivo_abertura, tipo_fornecedor, fornecedor, responsavel_id, created_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
+                );
+                $stmt->execute([
+                    $this->empresaId,
+                    $filialDestino,
+                    $codigo,
+                    $payload['veiculo_id'] ?? null,
+                    $payload['status'] ?? 'solicitacao',
+                    $payload['odometro_abertura'] ?? null,
+                    $payload['odometro_fechamento'] ?? null,
+                    $payload['aberta_por'] ?? null,
+                    $payload['aberta_em'] ?? date('Y-m-d H:i:s'),
+                    $payload['iniciada_em'] ?? null,
+                    $payload['concluida_em'] ?? null,
+                    $payload['encerrada_em'] ?? null,
+                    $payload['observacoes'] ?? null,
+                    $payload['medicao_tipo'] ?? 'odometro',
+                    $payload['disponibilidade'] ?? null,
+                    $payload['prioridade'] ?? 'media',
+                    $payload['motivo_abertura'] ?? null,
+                    $payload['tipo_fornecedor'] ?? 'externo',
+                    $payload['fornecedor'] ?? null,
+                    $payload['responsavel_id'] ?? null,
+                ]);
+                $id = (int)$this->db->lastInsertId();
+                $this->db->commit();
+                return $id;
+            } catch (\PDOException $e) {
+                if ($this->db->inTransaction()) {
+                    $this->db->rollBack();
+                }
+                $isDuplicate = $e->getCode() === '23000';
+                if (!$isDuplicate || $attempt >= $maxAttempts || isset($payload['codigo'])) {
+                    throw $e;
+                }
+                // Codigo colidiu com uma criacao concorrente: tenta gerar outro.
+            }
+        }
+        throw new \RuntimeException('Nao foi possivel gerar um codigo de OS unico.');
     }
 
     public function atualizar(int $id, array $payload): int
     {
-        $sql = 'UPDATE man_work_orders o SET o.veiculo_id = ?, o.status = ?, o.odometro_abertura = ?, o.odometro_fechamento = ?, o.observacoes = ?, o.updated_at = NOW() WHERE o.id = ? AND o.empresa_id = ?';
+        $sql = 'UPDATE man_work_orders o SET o.veiculo_id = ?, o.status = ?, o.odometro_abertura = ?, o.odometro_fechamento = ?, o.observacoes = ?,
+                    o.medicao_tipo = ?, o.disponibilidade = ?, o.prioridade = ?, o.motivo_abertura = ?, o.tipo_fornecedor = ?, o.fornecedor = ?, o.responsavel_id = ?,
+                    o.updated_at = NOW() WHERE o.id = ? AND o.empresa_id = ?';
         [$filialSql, $filialParams] = $this->filialWhere('o');
         $sql .= $filialSql;
         $params = [
             $payload['veiculo_id'] ?? null,
-            $payload['status'] ?? 'rascunho',
+            $payload['status'] ?? 'solicitacao',
             $payload['odometro_abertura'] ?? null,
             $payload['odometro_fechamento'] ?? null,
             $payload['observacoes'] ?? null,
+            $payload['medicao_tipo'] ?? 'odometro',
+            $payload['disponibilidade'] ?? null,
+            $payload['prioridade'] ?? 'media',
+            $payload['motivo_abertura'] ?? null,
+            $payload['tipo_fornecedor'] ?? 'externo',
+            $payload['fornecedor'] ?? null,
+            $payload['responsavel_id'] ?? null,
             $id,
             $this->empresaId,
         ];
@@ -427,7 +467,29 @@ class OrdensServicoModel
         return $stmt->rowCount();
     }
 
-    public function mudarStatus(int $id, string $status): int
+    /**
+     * Verifica se a OS pode ser encerrada: itens sem estar concluidos/cancelados
+     * bloqueiam o fechamento, assim como odometro_fechamento ausente.
+     * Retorna lista de motivos de bloqueio (vazia = pode encerrar).
+     */
+    public function motivosBloqueioEncerramento(int $id, $odometroFechamento): array
+    {
+        $motivos = [];
+        if ($odometroFechamento === null || $odometroFechamento === '') {
+            $motivos[] = 'Informe o odometro de fechamento.';
+        }
+        $stmt = $this->db->prepare(
+            "SELECT COUNT(*) FROM man_work_order_items
+             WHERE work_order_id = ? AND status NOT IN ('concluido', 'cancelado')"
+        );
+        $stmt->execute([$id]);
+        if ((int)$stmt->fetchColumn() > 0) {
+            $motivos[] = 'Existem itens pendentes que precisam ser concluidos ou cancelados.';
+        }
+        return $motivos;
+    }
+
+    public function mudarStatus(int $id, string $status, $odometroFechamento = null): int
     {
         $dates = [
             'iniciada_em' => null,
@@ -441,12 +503,13 @@ class OrdensServicoModel
         } elseif ($status === 'encerrada') {
             $dates['encerrada_em'] = date('Y-m-d H:i:s');
         }
-        $sql = 'UPDATE man_work_orders SET status = ?, iniciada_em = COALESCE(?, iniciada_em), concluida_em = COALESCE(?, concluida_em), encerrada_em = COALESCE(?, encerrada_em), updated_at = NOW()
+        $sql = 'UPDATE man_work_orders SET status = ?, odometro_fechamento = COALESCE(?, odometro_fechamento), iniciada_em = COALESCE(?, iniciada_em), concluida_em = COALESCE(?, concluida_em), encerrada_em = COALESCE(?, encerrada_em), updated_at = NOW()
              WHERE id = ? AND empresa_id = ?';
         [$filialSql, $filialParams] = $this->filialWhere('');
         $sql .= $filialSql;
         $params = array_merge([
             $status,
+            $odometroFechamento !== '' ? $odometroFechamento : null,
             $dates['iniciada_em'],
             $dates['concluida_em'],
             $dates['encerrada_em'],
@@ -461,8 +524,8 @@ class OrdensServicoModel
     public function addItem(int $osId, array $data): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO man_work_order_items (empresa_id, filial_id, work_order_id, titulo, descricao, status, prioridade, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, NOW())'
+            'INSERT INTO man_work_order_items (empresa_id, filial_id, work_order_id, titulo, descricao, status, prioridade, valor, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())'
         );
         $stmt->execute([
             $this->empresaId,
@@ -472,8 +535,51 @@ class OrdensServicoModel
             $data['descricao'] ?? null,
             $data['status'] ?? 'pendente',
             $data['prioridade'] ?? 'media',
+            (float)($data['valor'] ?? 0),
         ]);
         return (int)$this->db->lastInsertId();
+    }
+
+    public function addPendencia(int $osId, string $titulo): int
+    {
+        $stmt = $this->db->prepare(
+            'INSERT INTO man_work_order_pendencias (empresa_id, filial_id, work_order_id, titulo, resolvida, created_at)
+             VALUES (?, ?, ?, ?, 0, NOW())'
+        );
+        $stmt->execute([
+            $this->empresaId,
+            $this->normalizarFilialId($this->filialId),
+            $osId,
+            $titulo,
+        ]);
+        return (int)$this->db->lastInsertId();
+    }
+
+    public function resolverPendencia(int $pendenciaId, int $osId, bool $resolvida): bool
+    {
+        $stmt = $this->db->prepare(
+            'UPDATE man_work_order_pendencias SET resolvida = ?, updated_at = NOW()
+             WHERE id = ? AND work_order_id = ? AND empresa_id = ?'
+        );
+        $stmt->execute([$resolvida ? 1 : 0, $pendenciaId, $osId, $this->empresaId]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function listarPendencias(int $osId): array
+    {
+        $stmt = $this->db->prepare('SELECT * FROM man_work_order_pendencias WHERE work_order_id = ? ORDER BY created_at ASC');
+        $stmt->execute([$osId]);
+        return $stmt->fetchAll();
+    }
+
+    public function atualizarStatusItem(int $itemId, int $osId, string $status): bool
+    {
+        $stmt = $this->db->prepare(
+            'UPDATE man_work_order_items SET status = ?, updated_at = NOW()
+             WHERE id = ? AND work_order_id = ? AND empresa_id = ?'
+        );
+        $stmt->execute([$status, $itemId, $osId, $this->empresaId]);
+        return $stmt->rowCount() > 0;
     }
 
     public function addMaoDeObra(int $osId, array $data): int
@@ -570,6 +676,30 @@ class OrdensServicoModel
         $sql = 'SELECT 1 FROM cad_veiculos WHERE id = ? AND empresa_id = ?';
         $params = [$veiculoId, $this->empresaId];
         [$filialSql, $filialParams] = $this->filialWhere('', 'cad_veiculos');
+        $sql .= $filialSql;
+        $params = array_merge($params, $filialParams);
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (bool) $stmt->fetchColumn();
+    }
+
+    public function executorValido(int $executorId): bool
+    {
+        $sql = 'SELECT 1 FROM seg_usuarios WHERE id = ? AND empresa_id = ?';
+        $params = [$executorId, $this->empresaId];
+        [$filialSql, $filialParams] = $this->filialWhere('', 'seg_usuarios');
+        $sql .= $filialSql;
+        $params = array_merge($params, $filialParams);
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (bool) $stmt->fetchColumn();
+    }
+
+    public function responsavelValido(int $userId): bool
+    {
+        $sql = 'SELECT 1 FROM seg_usuarios WHERE id = ? AND empresa_id = ?';
+        $params = [$userId, $this->empresaId];
+        [$filialSql, $filialParams] = $this->filialWhere('', 'seg_usuarios');
         $sql .= $filialSql;
         $params = array_merge($params, $filialParams);
         $stmt = $this->db->prepare($sql);
