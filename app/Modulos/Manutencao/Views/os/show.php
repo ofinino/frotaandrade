@@ -5,23 +5,19 @@ $timeline = $timeline ?? [];
 $ssList = $ssList ?? [];
 
 $statusLabels = [
-    'rascunho' => 'Rascunho',
-    'aprovada' => 'Aprovada',
-    'programada' => 'Programada',
+    'solicitacao' => 'Solicitação',
+    'aguardando_agendamento' => 'Aguardando/Agendado',
     'em_execucao' => 'Em execução',
-    'aguardando_pecas' => 'Aguardando peças',
-    'concluida' => 'Concluída',
+    'analise_aprovacao' => 'Análise e Aprovação',
     'encerrada' => 'Encerrada',
     'cancelada' => 'Cancelada',
 ];
 $statusColors = [
-    'rascunho' => 'bg-slate-100 text-slate-700',
-    'aprovada' => 'bg-blue-100 text-blue-800',
-    'programada' => 'bg-indigo-100 text-indigo-800',
+    'solicitacao' => 'bg-slate-100 text-slate-700',
+    'aguardando_agendamento' => 'bg-indigo-100 text-indigo-800',
     'em_execucao' => 'bg-amber-100 text-amber-800',
-    'aguardando_pecas' => 'bg-rose-100 text-rose-800',
-    'concluida' => 'bg-emerald-100 text-emerald-800',
-    'encerrada' => 'bg-slate-200 text-slate-800',
+    'analise_aprovacao' => 'bg-orange-100 text-orange-800',
+    'encerrada' => 'bg-emerald-100 text-emerald-800',
     'cancelada' => 'bg-gray-200 text-gray-700',
 ];
 $statusKey = $os['status'] ?? 'rascunho';
@@ -65,12 +61,14 @@ $statusClass = $statusColors[$statusKey] ?? 'bg-slate-100 text-slate-700';
                         <input type="hidden" name="os_id" value="<?= sanitize($os['id'] ?? '') ?>">
                         <label class="text-sm font-medium text-slate-700">Status</label>
                         <select class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm" name="status">
-                            <?php foreach (['aprovada','programada','em_execucao','aguardando_pecas','concluida','encerrada','cancelada'] as $s): ?>
+                            <?php foreach (['solicitacao','aguardando_agendamento','em_execucao','analise_aprovacao','encerrada','cancelada'] as $s): ?>
                                 <option value="<?= $s ?>" <?= ($os['status'] ?? '') === $s ? 'selected' : '' ?>><?= $statusLabels[$s] ?? ucfirst($s) ?></option>
                             <?php endforeach; ?>
                         </select>
+                        <input class="rounded-lg border border-slate-200 px-3 py-2 text-sm w-40" name="odometro_fechamento" type="number" placeholder="Odometro final" value="<?= sanitize($os['odometro_fechamento'] ?? '') ?>">
                         <button class="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Atualizar status</button>
                     </form>
+                    <p class="mt-2 text-xs text-slate-500">Para encerrar, todos os itens devem estar concluidos/cancelados e o odometro final preenchido.</p>
                 </div>
             <?php endif; ?>
         </div>
@@ -101,24 +99,49 @@ $statusClass = $statusColors[$statusKey] ?? 'bg-slate-100 text-slate-700';
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <div class="flex items-center justify-between">
-                <h3 class="text-base font-semibold text-slate-900">Itens da OS</h3>
-                <span class="text-xs text-slate-500"><?= sanitize($os['items'] ? count($os['items']) : 0) ?> itens</span>
+                <h3 class="text-base font-semibold text-slate-900">Serviços</h3>
+                <span class="text-xs text-slate-500"><?= sanitize($os['items'] ? count($os['items']) : 0) ?> serviços</span>
             </div>
             <div class="mt-4 space-y-3">
                 <?php foreach ($os['items'] ?? [] as $it): ?>
                     <div class="rounded-xl border border-slate-100 bg-slate-50 p-3">
                         <div class="flex items-center justify-between">
                             <div class="font-semibold text-slate-800"><?= sanitize($it['titulo']) ?></div>
-                            <span class="text-xs font-medium text-slate-500"><?= ucfirst(sanitize($it['status'])) ?></span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-medium text-slate-700">R$ <?= number_format((float)($it['valor'] ?? 0), 2, ',', '.') ?></span>
+                                <span class="text-xs font-medium text-slate-500"><?= ucfirst(sanitize($it['status'])) ?></span>
+                            </div>
                         </div>
                         <?php if (!empty($it['descricao'])): ?>
                             <div class="mt-2 text-sm text-slate-600"><?= nl2br(sanitize($it['descricao'])) ?></div>
                         <?php endif; ?>
+                        <?php if (has_permission('os.manage')): ?>
+                            <form class="mt-2 flex items-center gap-2" method="post" action="index.php?mod=manutencao&ctrl=OrdensServico&action=updateItemStatus">
+<?= csrf_field() ?>
+                                <input type="hidden" name="os_id" value="<?= sanitize($os['id'] ?? '') ?>">
+                                <input type="hidden" name="item_id" value="<?= sanitize($it['id']) ?>">
+                                <select class="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs" name="status">
+                                    <?php foreach (['pendente','em_andamento','concluido','bloqueado','cancelado'] as $is): ?>
+                                        <option value="<?= $is ?>" <?= ($it['status'] ?? '') === $is ? 'selected' : '' ?>><?= ucfirst($is) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <button class="text-xs font-semibold text-slate-700 hover:underline">Salvar</button>
+                            </form>
+                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
                 <?php if (empty($os['items'])): ?>
-                    <div class="text-sm text-slate-500">Sem itens cadastrados.</div>
+                    <div class="text-sm text-slate-500">Sem serviços cadastrados.</div>
                 <?php endif; ?>
+                <?php
+                    $totalGeral = array_sum(array_column($os['items'] ?? [], 'valor'))
+                        + array_sum(array_column($os['labor'] ?? [], 'total'))
+                        + array_sum(array_column($os['parts'] ?? [], 'total'));
+                ?>
+                <div class="flex justify-end items-center gap-2 border-t border-slate-100 pt-3">
+                    <span class="text-sm text-slate-500">Total geral</span>
+                    <span class="text-base font-semibold text-slate-900">R$ <?= number_format((float)$totalGeral, 2, ',', '.') ?></span>
+                </div>
             </div>
 
             <?php if (has_permission('os.manage')): ?>
@@ -126,8 +149,8 @@ $statusClass = $statusColors[$statusKey] ?? 'bg-slate-100 text-slate-700';
 <?= csrf_field() ?>
                     <input type="hidden" name="os_id" value="<?= sanitize($os['id'] ?? '') ?>">
                     <div>
-                        <label class="text-sm font-medium text-slate-700">Novo item</label>
-                        <input class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" name="titulo" placeholder="Descrição do item" required>
+                        <label class="text-sm font-medium text-slate-700">Novo serviço</label>
+                        <input class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" name="titulo" placeholder="Descrição do serviço" required>
                     </div>
                     <div>
                         <textarea class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" name="descricao" rows="2" placeholder="Detalhes"></textarea>
@@ -138,7 +161,8 @@ $statusClass = $statusColors[$statusKey] ?? 'bg-slate-100 text-slate-700';
                                 <option value="<?= $p ?>"><?= ucfirst($p) ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <button class="inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Adicionar item</button>
+                        <input class="rounded-lg border border-slate-200 px-3 py-2 text-sm w-32" name="valor" type="number" step="0.01" placeholder="Valor">
+                        <button class="inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Adicionar serviço</button>
                     </div>
                 </form>
             <?php endif; ?>
@@ -162,7 +186,7 @@ $statusClass = $statusColors[$statusKey] ?? 'bg-slate-100 text-slate-700';
             </div>
 
             <?php if (has_permission('os.manage')): ?>
-                <form class="mt-5" method="post" action="index.php?mod=manutencao&ctrl=OrdensServico&action=addItem">
+                <form class="mt-5" method="post" action="index.php?mod=manutencao&ctrl=OrdensServico&action=linkServiceRequests">
 <?= csrf_field() ?>
                     <input type="hidden" name="os_id" value="<?= sanitize($os['id'] ?? '') ?>">
                     <label class="text-sm font-medium text-slate-700">Vincular SS</label>
@@ -171,10 +195,45 @@ $statusClass = $statusColors[$statusKey] ?? 'bg-slate-100 text-slate-700';
                             <option value="<?= sanitize($s['id']) ?>">#<?= sanitize($s['id']) ?> - <?= sanitize($s['titulo']) ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <p class="mt-2 text-xs text-slate-500">Para salvar, use o botão de adicionar item (fluxo atual não altera SS automaticamente).</p>
+                    <p class="mt-2 text-xs text-slate-500">Segure CTRL para selecionar multiplas.</p>
+                    <button class="mt-2 inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Vincular</button>
                 </form>
             <?php endif; ?>
         </div>
+    </section>
+
+    <section class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <div class="flex items-center justify-between">
+            <h3 class="text-base font-semibold text-slate-900">Pendências em aberto</h3>
+            <span class="text-xs text-slate-500"><?= sanitize($os['pendencias'] ? count($os['pendencias']) : 0) ?> pendências</span>
+        </div>
+        <div class="mt-4 space-y-2 text-sm">
+            <?php foreach ($os['pendencias'] ?? [] as $p): ?>
+                <div class="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2">
+                    <span class="<?= $p['resolvida'] ? 'line-through text-slate-400' : 'font-medium text-slate-800' ?>"><?= sanitize($p['titulo']) ?></span>
+                    <?php if (has_permission('os.manage')): ?>
+                        <form method="post" action="index.php?mod=manutencao&ctrl=OrdensServico&action=resolvePendencia">
+<?= csrf_field() ?>
+                            <input type="hidden" name="os_id" value="<?= sanitize($os['id'] ?? '') ?>">
+                            <input type="hidden" name="pendencia_id" value="<?= sanitize($p['id']) ?>">
+                            <input type="hidden" name="resolvida" value="<?= $p['resolvida'] ? '0' : '1' ?>">
+                            <button class="text-xs font-semibold text-blue-600 hover:underline"><?= $p['resolvida'] ? 'Reabrir' : 'Marcar resolvida' ?></button>
+                        </form>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+            <?php if (empty($os['pendencias'])): ?>
+                <div class="text-sm text-slate-500">Nenhuma pendência adicionada.</div>
+            <?php endif; ?>
+        </div>
+        <?php if (has_permission('os.manage')): ?>
+            <form class="mt-5 flex items-center gap-2" method="post" action="index.php?mod=manutencao&ctrl=OrdensServico&action=addPendencia">
+<?= csrf_field() ?>
+                <input type="hidden" name="os_id" value="<?= sanitize($os['id'] ?? '') ?>">
+                <input class="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm" name="titulo" placeholder="Descreva a pendência" required>
+                <button class="inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Adicionar</button>
+            </form>
+        <?php endif; ?>
     </section>
 
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -239,10 +298,31 @@ $statusClass = $statusColors[$statusKey] ?? 'bg-slate-100 text-slate-700';
 
     <section class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
         <h3 class="text-base font-semibold text-slate-900">Anexos</h3>
-        <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+
+        <?php if (has_permission('os.manage')): ?>
+            <form class="mt-4 mb-4" method="post" action="index.php?mod=manutencao&ctrl=OrdensServico&action=show&id=<?= sanitize($os['id'] ?? '') ?>" enctype="multipart/form-data">
+<?= csrf_field() ?>
+                <input type="hidden" name="os_id" value="<?= sanitize($os['id'] ?? '') ?>">
+                <label class="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 py-6 cursor-pointer hover:bg-slate-50">
+                    <span class="text-sm text-slate-600">Arraste e solte ou <span class="text-blue-600 underline">clique para selecionar</span></span>
+                    <span class="text-xs text-slate-400">PDF, PNG, JPEG • Máximo 20MB</span>
+                    <input type="file" name="anexos[]" multiple accept=".pdf,.png,.jpg,.jpeg" class="hidden" onchange="this.form.submit()">
+                </label>
+            </form>
+        <?php endif; ?>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
             <?php foreach ($attachments as $at): ?>
-                <a class="group block overflow-hidden rounded-xl border border-slate-100" href="<?= asset_url($at['file_path']) ?>" target="_blank">
-                    <img class="h-32 w-full object-cover transition-transform duration-200 group-hover:scale-105" src="<?= asset_url($at['file_path']) ?>" alt="<?= sanitize($at['original_name']) ?>">
+                <?php $isPdf = ($at['mime_type'] ?? '') === 'application/pdf'; ?>
+                <a class="group block overflow-hidden rounded-xl border border-slate-100" href="<?= sanitize(asset_url($at['file_path'])) ?>" target="_blank">
+                    <?php if ($isPdf): ?>
+                        <div class="h-32 w-full flex flex-col items-center justify-center gap-1 bg-slate-50 text-slate-500">
+                            <span class="text-2xl">📄</span>
+                            <span class="text-xs px-2 truncate w-full text-center"><?= sanitize($at['original_name']) ?></span>
+                        </div>
+                    <?php else: ?>
+                        <img class="h-32 w-full object-cover transition-transform duration-200 group-hover:scale-105" src="<?= sanitize(asset_url($at['file_path'])) ?>" alt="<?= sanitize($at['original_name']) ?>">
+                    <?php endif; ?>
                 </a>
             <?php endforeach; ?>
             <?php if (!$attachments): ?>
