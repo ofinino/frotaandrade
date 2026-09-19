@@ -58,7 +58,7 @@ class AnexosModel
         $maxBytes = 20 * 1024 * 1024;
         $normalizados = $this->normalizarArquivos($files);
         $salvos = [];
-        $subdir = $ownerType === 'ss' ? 'uploads/ss' : 'uploads/os';
+        $subdir = $ownerType === 'ss' ? 'ss' : 'os';
         $dir = $this->garantirDiretorio($subdir);
 
         foreach ($normalizados as $file) {
@@ -80,7 +80,7 @@ class AnexosModel
                 }
             }
             if ($moved) {
-                $relative = $subdir . '/' . $filename;
+                $relative = 'uploads/' . $subdir . '/' . $filename;
                 $this->db->prepare(
                     'INSERT INTO man_attachments (empresa_id, filial_id, owner_type, owner_id, file_path, original_name, mime_type, size, uploaded_by, uploaded_at)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
