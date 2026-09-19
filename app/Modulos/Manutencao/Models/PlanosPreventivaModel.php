@@ -221,6 +221,19 @@ class PlanosPreventivaModel
         return $stmt->fetchAll();
     }
 
+    public function contarVencimentos(): array
+    {
+        $sql = 'SELECT status, COUNT(*) c FROM man_maintenance_due WHERE empresa_id = ? GROUP BY status';
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$this->empresaId]);
+        $counts = ['ok' => 0, 'due_soon' => 0, 'overdue' => 0];
+        foreach ($stmt as $row) {
+            $counts[$row['status']] = (int)$row['c'];
+        }
+        $counts['todos'] = $counts['ok'] + $counts['due_soon'] + $counts['overdue'];
+        return $counts;
+    }
+
     public function processarPreventiva(SolicitacoesServicoModel $ssModel, AuditoriaModel $audit, bool $criarSS = true): array
     {
         $colOdo = $this->detectarOdometroColuna();

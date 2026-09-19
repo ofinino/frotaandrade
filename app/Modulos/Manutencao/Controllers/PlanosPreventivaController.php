@@ -109,10 +109,12 @@ class PlanosPreventivaController
         }
         $status = $_GET['status'] ?? null;
         $due = $this->model->listarVencimentos(['status' => $status]);
+        $counts = $this->model->contarVencimentos();
         View::render('Manutencao', 'preventiva/vencimentos', [
-            'title' => 'Vencimentos Preventiva',
+            'title' => 'Lembretes',
             'vencimentos' => $due,
             'status' => $status,
+            'counts' => $counts,
         ]);
     }
 

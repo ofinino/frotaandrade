@@ -28,7 +28,7 @@ function render_header(string $title = 'Painel'): void
             }
             if ((is_admin() || has_permission('preventiva.view'))) {
                 $navItems[] = ['page' => 'planos_preventiva', 'label' => 'Planos Preventiva', 'href' => 'index.php?page=planos_preventiva', 'perm' => true, 'icon' => 'history'];
-                $navItems[] = ['page' => 'vencimentos_preventiva', 'label' => 'Vencimentos', 'href' => 'index.php?page=vencimentos_preventiva', 'perm' => true, 'icon' => 'flag'];
+                $navItems[] = ['page' => 'vencimentos_preventiva', 'label' => 'Lembretes', 'href' => 'index.php?page=vencimentos_preventiva', 'perm' => true, 'icon' => 'flag'];
             }
             if (has_permission('templates.view')) {
                 $navItems[] = ['page' => 'templates', 'label' => 'Modelos', 'href' => 'index.php?page=templates', 'perm' => true, 'icon' => 'template'];
@@ -490,7 +490,7 @@ function render_header(string $title = 'Painel'): void
                             ['page' => 'servicos', 'label' => 'Servicos', 'icon' => 'list'],
                             ['page' => 'os', 'label' => 'Ordens de Servico', 'icon' => 'folder'],
                             ['page' => 'planos_preventiva', 'label' => 'Planos Preventiva', 'icon' => 'history'],
-                            ['page' => 'vencimentos_preventiva', 'label' => 'Vencimentos', 'icon' => 'flag'],
+                            ['page' => 'vencimentos_preventiva', 'label' => 'Lembretes', 'icon' => 'flag'],
                         ],
                     ],
                     [
