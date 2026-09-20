@@ -179,15 +179,19 @@ class TanquesController
             header('Location: index.php?page=meus_tanques');
             return;
         }
-        $this->model->registrarCompra([
-            'tank_id' => $tankId,
-            'numero_nota' => $_POST['numero_nota'] ?? null,
-            'data' => $_POST['data'] ?? date('Y-m-d'),
-            'valor_pago' => $_POST['valor_pago'] ?? 0,
-            'quantidade' => $quantidade,
-            'criado_por' => current_user()['id'] ?? null,
-        ]);
-        flash('success', 'Compra de combustivel registrada.');
+        try {
+            $this->model->registrarCompra([
+                'tank_id' => $tankId,
+                'numero_nota' => $_POST['numero_nota'] ?? null,
+                'data' => $_POST['data'] ?? date('Y-m-d'),
+                'valor_pago' => $_POST['valor_pago'] ?? 0,
+                'quantidade' => $quantidade,
+                'criado_por' => current_user()['id'] ?? null,
+            ]);
+            flash('success', 'Compra de combustivel registrada.');
+        } catch (\RuntimeException $e) {
+            flash('error', $e->getMessage());
+        }
         header('Location: index.php?page=meus_tanques');
     }
 }

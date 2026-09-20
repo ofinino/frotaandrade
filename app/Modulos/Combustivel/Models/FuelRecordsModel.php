@@ -182,7 +182,9 @@ class FuelRecordsModel
         $this->db->beginTransaction();
         try {
             if ($record['tipo'] === 'interno' && $record['tank_id']) {
-                $tanksModel->ajustarEstoque((int)$record['tank_id'], (float)$record['quantidade']);
+                if (!$tanksModel->ajustarEstoque((int)$record['tank_id'], (float)$record['quantidade'])) {
+                    throw new \RuntimeException('Nao e possivel excluir: devolver esse combustivel faria o tanque ultrapassar a capacidade maxima. Aumente a capacidade do tanque antes de excluir.');
+                }
             }
             $stmt = $this->db->prepare('DELETE FROM man_fuel_records WHERE id = ? AND empresa_id = ?');
             $stmt->execute([$id, $this->empresaId]);

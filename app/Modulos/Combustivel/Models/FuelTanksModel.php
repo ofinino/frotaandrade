@@ -91,9 +91,9 @@ class FuelTanksModel
     {
         $stmt = $this->db->prepare(
             'UPDATE man_fuel_tanks SET estoque_atual = estoque_atual + ?, updated_at = NOW()
-             WHERE id = ? AND empresa_id = ? AND estoque_atual + ? >= 0'
+             WHERE id = ? AND empresa_id = ? AND estoque_atual + ? >= 0 AND estoque_atual + ? <= capacidade_maxima'
         );
-        $stmt->execute([$delta, $id, $this->empresaId, $delta]);
+        $stmt->execute([$delta, $id, $this->empresaId, $delta, $delta]);
         return $stmt->rowCount() > 0;
     }
 
@@ -156,7 +156,9 @@ class FuelTanksModel
                 $data['criado_por'] ?? null,
             ]);
             $id = (int)$this->db->lastInsertId();
-            $this->ajustarEstoque((int)$data['tank_id'], (float)$data['quantidade']);
+            if (!$this->ajustarEstoque((int)$data['tank_id'], (float)$data['quantidade'])) {
+                throw new \RuntimeException('Essa compra faria o tanque ultrapassar a capacidade maxima. Reduza a quantidade ou aumente a capacidade do tanque.');
+            }
             $this->db->commit();
             return $id;
         } catch (\Throwable $e) {
@@ -186,7 +188,10 @@ class FuelTanksModel
         $this->db->beginTransaction();
         try {
             if ($delta !== 0.0 && !$this->ajustarEstoque((int)$compra['tank_id'], $delta)) {
-                throw new \RuntimeException('Nao e possivel reduzir essa compra: parte do combustivel ja foi consumida do tanque.');
+                $msg = $delta < 0
+                    ? 'Nao e possivel reduzir essa compra: parte do combustivel ja foi consumida do tanque.'
+                    : 'Nao e possivel aumentar essa compra: o tanque ultrapassaria a capacidade maxima.';
+                throw new \RuntimeException($msg);
             }
             $stmt = $this->db->prepare(
                 'UPDATE man_fuel_tank_purchases SET numero_nota = ?, data = ?, valor_pago = ?, quantidade = ? WHERE id = ? AND empresa_id = ?'

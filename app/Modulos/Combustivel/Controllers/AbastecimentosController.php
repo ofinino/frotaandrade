@@ -162,10 +162,14 @@ class AbastecimentosController
             return;
         }
         $id = (int)($_POST['id'] ?? 0);
-        if ($this->model->excluir($id, $this->tanksModel)) {
-            flash('success', 'Abastecimento excluido.');
-        } else {
-            flash('error', 'Abastecimento nao encontrado.');
+        try {
+            if ($this->model->excluir($id, $this->tanksModel)) {
+                flash('success', 'Abastecimento excluido.');
+            } else {
+                flash('error', 'Abastecimento nao encontrado.');
+            }
+        } catch (\RuntimeException $e) {
+            flash('error', $e->getMessage());
         }
         header('Location: index.php?page=abastecimentos');
     }
