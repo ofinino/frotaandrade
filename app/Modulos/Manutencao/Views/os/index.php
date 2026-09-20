@@ -272,7 +272,12 @@ html.os-agenda-lock .os-page-wrap {
 }
 #os-kanban-grid .os-dropzone {
     overflow-y:auto;
+    scrollbar-width:thin;
+    scrollbar-color:#cbd5e1 transparent;
 }
+#os-kanban-grid .os-dropzone::-webkit-scrollbar { width:6px; }
+#os-kanban-grid .os-dropzone::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:3px; }
+#os-kanban-grid .os-dropzone::-webkit-scrollbar-track { background:transparent; }
 /* Lista: mesma ideia - cabecalho da tabela fixo, só as linhas rolam. */
 #os-lista-view {
     flex:1 1 auto;
@@ -284,7 +289,12 @@ html.os-agenda-lock .os-page-wrap {
     flex:1 1 auto;
     min-height:0;
     overflow-y:auto;
+    scrollbar-width:thin;
+    scrollbar-color:#cbd5e1 transparent;
 }
+#os-lista-view .table-responsive::-webkit-scrollbar { width:6px; }
+#os-lista-view .table-responsive::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:3px; }
+#os-lista-view .table-responsive::-webkit-scrollbar-track { background:transparent; }
 #os-lista-view thead th {
     position:sticky;
     top:0;
