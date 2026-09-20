@@ -148,6 +148,18 @@ $fmtLitros = static fn(float $v): string => number_format($v, 1, ',', '.') . ' L
     </div>
 </div>
 
+<!-- Ordens de serviço -->
+<div class="os-section-title text-slate-900 mb-3">Ordens de serviço (estado atual)</div>
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+    <?php foreach ($osStatusLabels as $key => $label): ?>
+        <?php $cor = $osStatusColors[$key] ?? ['bg' => '#334155', 'wash' => '#f8fafc']; ?>
+        <div class="rounded-lg p-4 border" style="background: <?= $cor['wash'] ?>; border-color: <?= $cor['bg'] ?>33;">
+            <div class="text-xs font-medium" style="color: <?= $cor['bg'] ?>;"><?= sanitize($label) ?></div>
+            <div class="text-2xl font-semibold os-mono text-slate-900"><?= (int)($osStatusCounts[$key] ?? 0) ?></div>
+        </div>
+    <?php endforeach; ?>
+</div>
+
 <!-- Combustível -->
 <div class="os-section-title text-slate-900 mb-3">Combustível no período</div>
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
@@ -225,18 +237,6 @@ $fmtLitros = static fn(float $v): string => number_format($v, 1, ',', '.') . ' L
             </div>
         <?php endif; ?>
     </div>
-</div>
-
-<!-- Ordens de serviço -->
-<div class="os-section-title text-slate-900 mb-3">Ordens de serviço (estado atual)</div>
-<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-    <?php foreach ($osStatusLabels as $key => $label): ?>
-        <?php $cor = $osStatusColors[$key] ?? ['bg' => '#334155', 'wash' => '#f8fafc']; ?>
-        <div class="rounded-lg p-4 border" style="background: <?= $cor['wash'] ?>; border-color: <?= $cor['bg'] ?>33;">
-            <div class="text-xs font-medium" style="color: <?= $cor['bg'] ?>;"><?= sanitize($label) ?></div>
-            <div class="text-2xl font-semibold os-mono text-slate-900"><?= (int)($osStatusCounts[$key] ?? 0) ?></div>
-        </div>
-    <?php endforeach; ?>
 </div>
 
 <!-- Atalhos -->
