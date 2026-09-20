@@ -254,6 +254,25 @@ html.os-agenda-lock .os-page-wrap {
 .os-board-scroll .os-column-header {
     display:none;
 }
+/* Kanban por status: cada coluna rola de forma independente, cabecalho fixo,
+   igual a referencia (ordem de servico exemplo.mp4) - sem isso a pagina
+   inteira crescia e "empurrava" o cabecalho pra fora da tela. */
+#os-kanban-view {
+    flex:1 1 auto;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+}
+#os-kanban-grid {
+    flex:1 1 auto;
+    min-height:0;
+}
+#os-kanban-grid .os-column {
+    min-height:0;
+}
+#os-kanban-grid .os-dropzone {
+    overflow-y:auto;
+}
 .os-board-container {
     position: relative;
     flex:1 1 auto;
@@ -717,7 +736,7 @@ html.os-agenda-lock .os-page-wrap {
     </div>
 
     <div id="os-kanban-view" class="space-y-3" style="display:none;">
-        <div style="display:grid; gap:12px; grid-template-columns: repeat(6, minmax(230px, 1fr));">
+        <div id="os-kanban-grid" style="display:grid; gap:12px; grid-template-columns: repeat(6, minmax(230px, 1fr));">
             <?php foreach ($kanbanColumns as $statusKey => $label): ?>
                 <?php $cards = $kanbanCardsByStatus[$statusKey] ?? []; ?>
                 <?php $hc = $kanbanHeaderColors[$statusKey] ?? ['bg' => '#1e293b', 'fg' => '#ffffff', 'wash' => '#f8fafc']; ?>
@@ -940,7 +959,7 @@ const CSRF_TOKEN = <?= json_encode(csrf_token()) ?>;
             btn.classList.toggle('btn-primary', active);
             btn.classList.toggle('btn-outline-secondary', !active);
         });
-        setPageScrollLock(view === 'agenda');
+        setPageScrollLock(view === 'agenda' || view === 'kanban');
     }
 
     function setMode(mode) {
