@@ -122,8 +122,13 @@ class FuelRecordsModel
     public function criar(array $data, FuelTanksModel $tanksModel): int
     {
         $quantidade = (float)$data['quantidade'];
-        $custo = $data['tipo'] === 'comercial' ? (float)($data['custo'] ?? 0) : null;
-        $valorLitro = ($custo !== null && $quantidade > 0) ? round($custo / $quantidade, 4) : null;
+        $custo = null;
+        $valorLitro = null;
+
+        if ($data['tipo'] === 'comercial') {
+            $custo = (float)($data['custo'] ?? 0);
+            $valorLitro = $quantidade > 0 ? round($custo / $quantidade, 4) : null;
+        }
 
         $this->db->beginTransaction();
         try {
@@ -131,6 +136,8 @@ class FuelRecordsModel
                 if (!$tanksModel->ajustarEstoque((int)$data['tank_id'], -$quantidade)) {
                     throw new \RuntimeException('Estoque insuficiente no tanque selecionado.');
                 }
+                $valorLitro = $tanksModel->precoPorLitroEm((int)$data['tank_id'], $data['data_hora']);
+                $custo = $valorLitro !== null ? round($valorLitro * $quantidade, 2) : null;
             }
             $stmt = $this->db->prepare(
                 'INSERT INTO man_fuel_records (empresa_id, filial_id, veiculo_id, tipo, fornecedor_id, tank_id, data_hora, quantidade, odometro, combustivel_tipo, custo, valor_litro, tanque_cheio, observacoes, criado_por, created_at)

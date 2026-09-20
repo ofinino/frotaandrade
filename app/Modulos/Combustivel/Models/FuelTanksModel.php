@@ -70,6 +70,22 @@ class FuelTanksModel
         return $stmt->rowCount() > 0;
     }
 
+    public function precoPorLitroEm(int $tankId, string $dataHora): ?float
+    {
+        $data = substr($dataHora, 0, 10);
+        $stmt = $this->db->prepare(
+            'SELECT valor_pago, quantidade FROM man_fuel_tank_purchases
+             WHERE tank_id = ? AND empresa_id = ? AND data <= ?
+             ORDER BY data DESC, id DESC LIMIT 1'
+        );
+        $stmt->execute([$tankId, $this->empresaId, $data]);
+        $purchase = $stmt->fetch();
+        if (!$purchase || (float)$purchase['quantidade'] <= 0) {
+            return null;
+        }
+        return round((float)$purchase['valor_pago'] / (float)$purchase['quantidade'], 4);
+    }
+
     public function listarCompras(array $filters = []): array
     {
         $sql = 'SELECT p.*, t.nome AS tank_nome FROM man_fuel_tank_purchases p
