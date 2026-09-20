@@ -101,9 +101,7 @@ function render_header(string $title = 'Painel'): void
             })();
         </script>
         <script src="https://cdn.tailwindcss.com"></script>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+        <link href="assets/fonts/fonts.css" rel="stylesheet">
         <style>
             /* Escopo experimental de design do modulo de Ordens de Servico.
                Nao afeta o resto do app - so ativa dentro de .os-redesign. */
