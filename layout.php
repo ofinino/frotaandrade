@@ -104,8 +104,8 @@ function render_header(string $title = 'Painel'): void
         <link href="assets/fonts/fonts.css" rel="stylesheet">
         <style>
             /* Escopo experimental de design do modulo de Ordens de Servico.
-               Nao afeta o resto do app - so ativa dentro de .os-redesign. */
-            .os-redesign {
+               Nao afeta o resto do app - so ativa dentro de .app-redesign. */
+            .app-redesign {
                 --os-paper: #eff1f0;
                 --os-surface: #ffffff;
                 --os-ink: #1b1f24;
@@ -118,31 +118,31 @@ function render_header(string $title = 'Painel'): void
                 color: var(--os-ink);
                 background: var(--os-paper);
             }
-            .os-redesign .os-mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
-            .os-redesign .os-card-surface { background: var(--os-surface); border: 1px solid var(--os-line); border-radius: 10px; }
-            .os-redesign .os-btn-primary { background: var(--os-steel); color: #fff; border-radius: 8px; }
-            .os-redesign .os-btn-primary:hover { background: var(--os-steel-strong); }
-            .os-redesign .os-section-title { position: relative; padding-left: 14px; font-weight: 700; }
-            .os-redesign .os-section-title::before { content: ''; position: absolute; left: 0; top: 2px; bottom: 2px; width: 3px; background: var(--os-signal); border-radius: 2px; }
-            .os-redesign .os-ticket-card { border-radius: 8px; border-left-width: 4px; }
+            .app-redesign .os-mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+            .app-redesign .os-card-surface { background: var(--os-surface); border: 1px solid var(--os-line); border-radius: 10px; }
+            .app-redesign .os-btn-primary { background: var(--os-steel); color: #fff; border-radius: 8px; }
+            .app-redesign .os-btn-primary:hover { background: var(--os-steel-strong); }
+            .app-redesign .os-section-title { position: relative; padding-left: 14px; font-weight: 700; }
+            .app-redesign .os-section-title::before { content: ''; position: absolute; left: 0; top: 2px; bottom: 2px; width: 3px; background: var(--os-signal); border-radius: 2px; }
+            .app-redesign .os-ticket-card { border-radius: 8px; border-left-width: 4px; }
             /* Reaproveita as classes utilitarias do Tailwind ja usadas em create.php/show.php,
-               escopado por .os-redesign para nao vazar pro resto do app. */
-            .os-redesign h1, .os-redesign h2, .os-redesign h3 { font-family: 'Archivo', sans-serif; }
-            .os-redesign .text-slate-900 { color: var(--os-ink) !important; }
-            .os-redesign .text-slate-700, .os-redesign .text-slate-800 { color: var(--os-ink-muted) !important; }
-            .os-redesign .border-slate-200, .os-redesign .border-slate-100 { border-color: var(--os-line) !important; }
-            .os-redesign .rounded-2xl, .os-redesign .rounded-xl { border-radius: 10px !important; }
-            .os-redesign .shadow-sm { box-shadow: none !important; }
-            .os-redesign .bg-slate-900 { background-color: var(--os-steel) !important; }
-            .os-redesign .bg-slate-900:hover, .os-redesign .hover\:bg-slate-800:hover { background-color: var(--os-steel-strong) !important; }
-            .os-redesign section h3.text-base.font-semibold,
-            .os-redesign .os-form-section-title {
+               escopado por .app-redesign para nao vazar pro resto do app. */
+            .app-redesign h1, .app-redesign h2, .app-redesign h3 { font-family: 'Archivo', sans-serif; }
+            .app-redesign .text-slate-900 { color: var(--os-ink) !important; }
+            .app-redesign .text-slate-700, .app-redesign .text-slate-800 { color: var(--os-ink-muted) !important; }
+            .app-redesign .border-slate-200, .app-redesign .border-slate-100 { border-color: var(--os-line) !important; }
+            .app-redesign .rounded-2xl, .app-redesign .rounded-xl { border-radius: 10px !important; }
+            .app-redesign .shadow-sm { box-shadow: none !important; }
+            .app-redesign .bg-slate-900 { background-color: var(--os-steel) !important; }
+            .app-redesign .bg-slate-900:hover, .app-redesign .hover\:bg-slate-800:hover { background-color: var(--os-steel-strong) !important; }
+            .app-redesign section h3.text-base.font-semibold,
+            .app-redesign .os-form-section-title {
                 position: relative;
                 padding-left: 14px;
                 display: inline-block;
             }
-            .os-redesign section h3.text-base.font-semibold::before,
-            .os-redesign .os-form-section-title::before {
+            .app-redesign section h3.text-base.font-semibold::before,
+            .app-redesign .os-form-section-title::before {
                 content: '';
                 position: absolute;
                 left: 0;
@@ -152,7 +152,7 @@ function render_header(string $title = 'Painel'): void
                 background: var(--os-signal);
                 border-radius: 2px;
             }
-            .os-redesign .os-mono, .os-redesign input[type="number"], .os-redesign .font-mono {
+            .app-redesign .os-mono, .app-redesign input[type="number"], .app-redesign .font-mono {
                 font-family: 'IBM Plex Mono', ui-monospace, monospace;
             }
         </style>
@@ -501,7 +501,7 @@ function render_header(string $title = 'Painel'): void
         </style>
         <title><?= sanitize($title ?: $appName) ?></title>
     </head>
-    <body class="overflow-x-hidden">
+    <body class="overflow-x-hidden app-redesign">
     <div id="app-shell" class="app-shell flex min-h-screen">
         <aside id="sidebar" class="sidebar-v2">
             <?php
