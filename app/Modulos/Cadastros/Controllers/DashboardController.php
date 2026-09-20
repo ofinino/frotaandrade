@@ -134,6 +134,82 @@ class DashboardController
             $serieExecutadas = [];
         }
 
+        // Combustivel: resumo do periodo (gasto, litros, preco medio)
+        $fuelSummary = [
+            'total_abastecimentos' => 0,
+            'custo_total' => 0.0,
+            'quantidade_total' => 0.0,
+            'preco_medio' => 0.0,
+        ];
+        try {
+            $sqlFuel = "SELECT COUNT(*) AS total,
+                               COALESCE(SUM(custo), 0) AS custo_total,
+                               COALESCE(SUM(quantidade), 0) AS quantidade_total
+                        FROM man_fuel_records
+                        WHERE empresa_id = ?
+                          AND data_hora BETWEEN ? AND ? $branchFilter";
+            $paramsFuel = array_merge([$companyId, $start->format('Y-m-d H:i:s'), $end->format('Y-m-d H:i:s')], $branchParams);
+            $stmt = $db->prepare($sqlFuel);
+            $stmt->execute($paramsFuel);
+            $row = $stmt->fetch() ?: [];
+            $fuelSummary['total_abastecimentos'] = (int)($row['total'] ?? 0);
+            $fuelSummary['custo_total'] = (float)($row['custo_total'] ?? 0);
+            $fuelSummary['quantidade_total'] = (float)($row['quantidade_total'] ?? 0);
+            $fuelSummary['preco_medio'] = $fuelSummary['quantidade_total'] > 0
+                ? $fuelSummary['custo_total'] / $fuelSummary['quantidade_total']
+                : 0.0;
+        } catch (\Throwable $e) {
+            // mantem zeros caso a tabela nao exista/erro
+        }
+
+        // Combustivel: gasto por dia no periodo
+        try {
+            $sqlFuelSerie = "SELECT DATE(data_hora) AS dia, COALESCE(SUM(custo), 0) AS total
+                              FROM man_fuel_records
+                              WHERE empresa_id = ?
+                                AND data_hora BETWEEN ? AND ? $branchFilter
+                              GROUP BY DATE(data_hora)
+                              ORDER BY dia ASC";
+            $paramsFuelSerie = array_merge([$companyId, $start->format('Y-m-d H:i:s'), $end->format('Y-m-d H:i:s')], $branchParams);
+            $stmt = $db->prepare($sqlFuelSerie);
+            $stmt->execute($paramsFuelSerie);
+            $serieCombustivel = $stmt->fetchAll();
+        } catch (\Throwable $e) {
+            $serieCombustivel = [];
+        }
+
+        // Combustivel: saldo atual dos tanques ativos
+        try {
+            $sqlTanques = "SELECT nome, capacidade_maxima, estoque_atual
+                            FROM man_fuel_tanks
+                            WHERE empresa_id = ? AND ativo = 1 $branchFilter
+                            ORDER BY nome ASC";
+            $stmt = $db->prepare($sqlTanques);
+            $stmt->execute(array_merge([$companyId], $branchParams));
+            $tanques = $stmt->fetchAll();
+        } catch (\Throwable $e) {
+            $tanques = [];
+        }
+
+        // Ordens de servico: contagem por status (estado atual, nao filtrado por periodo)
+        $osStatusOrder = ['solicitacao', 'aguardando_agendamento', 'em_execucao', 'analise_aprovacao', 'encerrada', 'cancelada'];
+        $osStatusCounts = array_fill_keys($osStatusOrder, 0);
+        try {
+            $sqlOs = "SELECT status, COUNT(*) AS total
+                      FROM man_work_orders
+                      WHERE empresa_id = ? $branchFilter
+                      GROUP BY status";
+            $stmt = $db->prepare($sqlOs);
+            $stmt->execute(array_merge([$companyId], $branchParams));
+            foreach ($stmt->fetchAll() as $row) {
+                if (isset($osStatusCounts[$row['status']])) {
+                    $osStatusCounts[$row['status']] = (int)$row['total'];
+                }
+            }
+        } catch (\Throwable $e) {
+            // mantem zeros caso a tabela nao exista/erro
+        }
+
         View::render('Cadastros', 'dashboard', [
             'title' => 'Painel',
             'tables' => $tables,
@@ -141,6 +217,10 @@ class DashboardController
             'statusCounts' => $statusCounts,
             'pendentesPorExec' => $pendentesPorExec,
             'serieExecutadas' => $serieExecutadas,
+            'fuelSummary' => $fuelSummary,
+            'serieCombustivel' => $serieCombustivel,
+            'tanques' => $tanques,
+            'osStatusCounts' => $osStatusCounts,
             'period' => $period,
             'start' => $start,
             'end' => $end,
