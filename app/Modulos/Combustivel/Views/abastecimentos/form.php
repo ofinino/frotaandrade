@@ -71,7 +71,6 @@ $tiposCombustivel = $tiposCombustivel ?? [];
                             <option value="<?= sanitize($ct['id']) ?>"><?= sanitize($ct['nome']) ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <p class="mt-1 text-xs text-slate-500"><a class="text-blue-600 hover:underline" href="index.php?page=combustivel_tipos">Gerenciar tipos de combustível</a></p>
                 </div>
                 <div id="campo-custo">
                     <label class="block text-sm font-medium text-slate-700 mb-1">Custo (R$) *</label>

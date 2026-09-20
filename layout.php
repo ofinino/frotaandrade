@@ -33,6 +33,7 @@ function render_header(string $title = 'Painel'): void
             if ((is_admin() || has_permission('combustivel.view'))) {
                 $navItems[] = ['page' => 'abastecimentos', 'label' => 'Abastecimentos', 'href' => 'index.php?page=abastecimentos', 'perm' => true, 'icon' => 'list'];
                 $navItems[] = ['page' => 'meus_tanques', 'label' => 'Meus tanques', 'href' => 'index.php?page=meus_tanques', 'perm' => true, 'icon' => 'truck'];
+                $navItems[] = ['page' => 'combustivel_tipos', 'label' => 'Tipos de combustível', 'href' => 'index.php?page=combustivel_tipos', 'perm' => true, 'icon' => 'list'];
             }
             if (has_permission('templates.view')) {
                 $navItems[] = ['page' => 'templates', 'label' => 'Modelos', 'href' => 'index.php?page=templates', 'perm' => true, 'icon' => 'template'];
@@ -504,6 +505,7 @@ function render_header(string $title = 'Painel'): void
                         'items' => [
                             ['page' => 'abastecimentos', 'label' => 'Abastecimentos', 'icon' => 'list'],
                             ['page' => 'meus_tanques', 'label' => 'Meus tanques', 'icon' => 'truck'],
+                            ['page' => 'combustivel_tipos', 'label' => 'Tipos de combustível', 'icon' => 'list'],
                         ],
                     ],
                     [

@@ -49,4 +49,28 @@ class FuelTypesModel
         $stmt->execute([$ativo ? 1 : 0, $id, $this->empresaId]);
         return $stmt->rowCount() > 0;
     }
+
+    public function atualizar(int $id, string $nome): bool
+    {
+        $stmt = $this->db->prepare('UPDATE man_fuel_types SET nome = ?, updated_at = NOW() WHERE id = ? AND empresa_id = ?');
+        $stmt->execute([$nome, $id, $this->empresaId]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function temUso(int $id): bool
+    {
+        $stmt = $this->db->prepare('SELECT COUNT(*) FROM man_fuel_records WHERE combustivel_tipo_id = ?');
+        $stmt->execute([$id]);
+        return ((int)$stmt->fetchColumn()) > 0;
+    }
+
+    public function excluir(int $id): bool
+    {
+        if ($this->temUso($id)) {
+            throw new \RuntimeException('Este tipo de combustivel ja foi usado em abastecimentos e nao pode ser excluido. Inative-o em vez disso.');
+        }
+        $stmt = $this->db->prepare('DELETE FROM man_fuel_types WHERE id = ? AND empresa_id = ?');
+        $stmt->execute([$id, $this->empresaId]);
+        return $stmt->rowCount() > 0;
+    }
 }

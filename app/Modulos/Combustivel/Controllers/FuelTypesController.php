@@ -20,9 +20,15 @@ class FuelTypesController
             header('Location: index.php');
             return;
         }
+        $tipos = $this->model->listar();
+        $temUso = [];
+        foreach ($tipos as $t) {
+            $temUso[$t['id']] = $this->model->temUso((int)$t['id']);
+        }
         View::render('Combustivel', 'tipos/index', [
             'title' => 'Tipos de combustível',
-            'tipos' => $this->model->listar(),
+            'tipos' => $tipos,
+            'temUso' => $temUso,
         ]);
     }
 
@@ -54,6 +60,45 @@ class FuelTypesController
         $ativo = !empty($_POST['ativo']);
         $this->model->toggleAtivo($id, $ativo);
         flash('success', 'Tipo de combustível atualizado.');
+        header('Location: index.php?page=combustivel_tipos');
+    }
+
+    public function update(): void
+    {
+        if (!has_permission('combustivel.manage')) {
+            flash('error', 'Sem permissao.');
+            header('Location: index.php?page=combustivel_tipos');
+            return;
+        }
+        $id = (int)($_POST['id'] ?? 0);
+        $nome = trim($_POST['nome'] ?? '');
+        if (!$id || $nome === '') {
+            flash('error', 'Informe um nome valido.');
+        } elseif ($this->model->atualizar($id, $nome)) {
+            flash('success', 'Tipo de combustível atualizado.');
+        } else {
+            flash('error', 'Tipo de combustível nao encontrado.');
+        }
+        header('Location: index.php?page=combustivel_tipos');
+    }
+
+    public function destroy(): void
+    {
+        if (!has_permission('combustivel.manage')) {
+            flash('error', 'Sem permissao.');
+            header('Location: index.php?page=combustivel_tipos');
+            return;
+        }
+        $id = (int)($_POST['id'] ?? 0);
+        try {
+            if ($this->model->excluir($id)) {
+                flash('success', 'Tipo de combustível excluido.');
+            } else {
+                flash('error', 'Tipo de combustível nao encontrado.');
+            }
+        } catch (\RuntimeException $e) {
+            flash('error', $e->getMessage());
+        }
         header('Location: index.php?page=combustivel_tipos');
     }
 }
