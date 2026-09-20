@@ -133,16 +133,26 @@ $filters = $filters ?? [];
                         </td>
                     </tr>
                     <?php if (has_permission('combustivel.manage')): ?>
+                        <?php $editFormId = 'edit-form-' . $c['id']; ?>
                         <tr id="compra-edit-<?= sanitize($c['id']) ?>" class="hidden bg-slate-50">
-                            <td colspan="6" class="px-4 py-3">
-                                <form method="post" action="index.php?mod=combustivel&ctrl=Tanques&action=updatePurchase" class="grid grid-cols-1 md:grid-cols-5 gap-2 items-center">
+                            <td class="px-4 py-2">
+                                <input form="<?= $editFormId ?>" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" name="data" type="date" value="<?= sanitize($c['data']) ?>" required>
+                            </td>
+                            <td class="px-4 py-2">
+                                <input form="<?= $editFormId ?>" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" name="numero_nota" value="<?= sanitize($c['numero_nota'] ?? '') ?>" placeholder="Número da nota">
+                            </td>
+                            <td class="px-4 py-2">
+                                <input form="<?= $editFormId ?>" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" name="quantidade" type="number" step="0.01" value="<?= sanitize($c['quantidade']) ?>" placeholder="Quantidade (L)" required>
+                            </td>
+                            <td class="px-4 py-2">
+                                <input form="<?= $editFormId ?>" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" name="valor_pago" type="number" step="0.01" value="<?= sanitize($c['valor_pago']) ?>" placeholder="Valor pago (R$)">
+                            </td>
+                            <td class="px-4 py-2 text-xs text-slate-400"><?= sanitize($c['tank_nome']) ?></td>
+                            <td class="px-4 py-2 text-right">
+                                <button form="<?= $editFormId ?>" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">Salvar</button>
+                                <form id="<?= $editFormId ?>" method="post" action="index.php?mod=combustivel&ctrl=Tanques&action=updatePurchase" class="hidden">
 <?= csrf_field() ?>
                                     <input type="hidden" name="id" value="<?= sanitize($c['id']) ?>">
-                                    <input class="rounded-lg border border-slate-200 px-3 py-2 text-sm" name="numero_nota" value="<?= sanitize($c['numero_nota'] ?? '') ?>" placeholder="Número da nota">
-                                    <input class="rounded-lg border border-slate-200 px-3 py-2 text-sm" name="data" type="date" value="<?= sanitize($c['data']) ?>" required>
-                                    <input class="rounded-lg border border-slate-200 px-3 py-2 text-sm" name="valor_pago" type="number" step="0.01" value="<?= sanitize($c['valor_pago']) ?>" placeholder="Valor pago (R$)">
-                                    <input class="rounded-lg border border-slate-200 px-3 py-2 text-sm" name="quantidade" type="number" step="0.01" value="<?= sanitize($c['quantidade']) ?>" placeholder="Quantidade (L)" required>
-                                    <button class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">Salvar</button>
                                 </form>
                             </td>
                         </tr>
