@@ -206,7 +206,10 @@ class OrdensServicoModel
         $scheduleReady = $this->ensureScheduleTable();
 
         $sql = 'SELECT o.*, v.plate AS vehicle_plate, u.name AS aberta_por_nome,
-                       COUNT(DISTINCT p.service_request_id) AS total_ss';
+                       COUNT(DISTINCT p.service_request_id) AS total_ss,
+                       (SELECT GROUP_CONCAT(i.titulo SEPARATOR ", ")
+                          FROM man_work_order_items i
+                         WHERE i.work_order_id = o.id) AS servicos_titulos';
         if ($scheduleReady) {
             $sql .= ', ws.executor_id, ws.programada_para, ue.name AS executor_nome';
         } else {

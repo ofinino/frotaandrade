@@ -782,7 +782,8 @@ html.os-agenda-lock .os-page-wrap {
                                 </div>
                                 <div class="os-card-meta mb-1"><?= sanitize($diasAberta) ?></div>
                                 <div class="os-card-meta mb-1"><?= sanitize($kOs['vehicle_plate'] ?? '-') ?></div>
-                                <div class="os-card-meta mb-2"><?= sanitize($kOs['motivo_abertura'] ?? '') ?></div>
+                                <div class="os-card-meta mb-1"><?= sanitize($kOs['motivo_abertura'] ?? '') ?></div>
+                                <div class="os-card-meta mb-2"><?= sanitize($kOs['servicos_titulos'] ?? '') ?></div>
                                 <div class="os-card-actions">
                                     <a class="btn btn-sm btn-outline-primary os-open-btn" href="index.php?mod=manutencao&ctrl=OrdensServico&action=show&id=<?= sanitize($kOs['id']) ?>">Abrir OS</a>
                                 </div>
