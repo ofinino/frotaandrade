@@ -3,8 +3,6 @@
 $tables = $tables ?? [];
 $counts = $counts ?? [];
 $statusCounts = $statusCounts ?? [];
-$pendentesPorExec = $pendentesPorExec ?? [];
-$serieExecutadas = $serieExecutadas ?? [];
 $fuelSummary = $fuelSummary ?? ['total_abastecimentos' => 0, 'custo_total' => 0.0, 'quantidade_total' => 0.0, 'preco_medio' => 0.0];
 $serieCombustivel = $serieCombustivel ?? [];
 $tanques = $tanques ?? [];
@@ -46,13 +44,6 @@ $osStatusColors = [
     'encerrada' => ['bg' => '#059669', 'wash' => '#ecfdf5'],
     'cancelada' => ['bg' => '#6b7280', 'wash' => '#f9fafb'],
 ];
-
-// Prepara série de checklists para gráfico simples
-$maxSerie = 0;
-foreach ($serieExecutadas as $row) {
-    $maxSerie = max($maxSerie, (int)($row['total'] ?? 0));
-}
-$maxSerie = max($maxSerie, 1);
 
 // Prepara série de combustível para gráfico simples
 $maxSerieFuel = 0.0;
@@ -96,56 +87,6 @@ $fmtLitros = static fn(float $v): string => number_format($v, 1, ',', '.') . ' L
             <div class="text-2xl font-semibold os-mono"><?= (int)($statusCounts[$key] ?? 0) ?></div>
         </div>
     <?php endforeach; ?>
-</div>
-
-<div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-6">
-    <!-- Pendentes por executante -->
-    <div class="os-card-surface p-4 xl:col-span-1">
-        <div class="flex items-center justify-between mb-3">
-            <div class="font-semibold text-slate-900">Pendentes por executante</div>
-        </div>
-        <?php if (empty($pendentesPorExec)): ?>
-            <div class="text-sm text-slate-500">Nenhuma pendência.</div>
-        <?php else: ?>
-            <div class="space-y-2">
-                <?php foreach ($pendentesPorExec as $row): ?>
-                    <div class="flex items-center justify-between rounded border border-slate-200 px-3 py-2">
-                        <div class="text-sm text-slate-800"><?= sanitize($row['executante'] ?? 'Sem executante') ?></div>
-                        <div class="text-sm font-semibold text-slate-900 os-mono"><?= (int)($row['total'] ?? 0) ?></div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-    </div>
-
-    <!-- Série de concluídos -->
-    <div class="os-card-surface p-4 xl:col-span-2">
-        <div class="flex items-center justify-between mb-3">
-            <div class="font-semibold text-slate-900">Execuções concluídas no período</div>
-        </div>
-        <?php if (empty($serieExecutadas)): ?>
-            <div class="text-sm text-slate-500">Sem execuções concluídas no período.</div>
-        <?php else: ?>
-            <div class="space-y-2">
-                <?php foreach ($serieExecutadas as $row): ?>
-                    <?php
-                        $dia = $row['dia'] ?? '';
-                        $total = (int)($row['total'] ?? 0);
-                        $percent = min(100, round(($total / $maxSerie) * 100, 1));
-                    ?>
-                    <div>
-                        <div class="flex items-center justify-between text-xs text-slate-600 mb-1">
-                            <span class="os-mono"><?= sanitize($dia) ?></span>
-                            <span class="os-mono"><?= $total ?></span>
-                        </div>
-                        <div class="h-2 rounded bg-slate-100 overflow-hidden">
-                            <div class="h-full bg-emerald-500" style="width: <?= $percent ?>%;"></div>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-    </div>
 </div>
 
 <!-- Ordens de serviço -->

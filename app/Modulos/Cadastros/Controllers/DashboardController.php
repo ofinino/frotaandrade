@@ -65,13 +65,10 @@ class DashboardController
         $end = $now;
 
         $branchFilter = '';
-        $branchFilterExec = '';
         $branchParams = [];
         if (!is_admin() && $branchIds) {
             $placeholders = implode(',', array_fill(0, count($branchIds), '?'));
             $branchFilter = " AND (filial_id IS NULL OR filial_id IN ($placeholders))";
-            // Para consultas com alias "e" (pendentes)
-            $branchFilterExec = " AND (e.filial_id IS NULL OR e.filial_id IN ($placeholders))";
             $branchParams = $branchIds;
         }
 
@@ -96,42 +93,6 @@ class DashboardController
             }
         } catch (\Throwable $e) {
             // mantém zero caso falhe
-        }
-
-        // Pendentes por executante
-        try {
-            $sqlPend = "SELECT COALESCE(u.name, 'Sem executante') AS executante, COUNT(*) AS total
-                        FROM man_checklist_execucoes e
-                        LEFT JOIN seg_usuarios u ON u.id = e.atribuido_para
-                        WHERE e.empresa_id = ?
-                          AND e.status IN ('pendente','em_andamento','pausado')
-                          $branchFilterExec
-                        GROUP BY e.atribuido_para, executante
-                        ORDER BY total DESC";
-            $paramsPend = array_merge([$companyId], $branchParams);
-            $stmt = $db->prepare($sqlPend);
-            $stmt->execute($paramsPend);
-            $pendentesPorExec = $stmt->fetchAll();
-        } catch (\Throwable $e) {
-            $pendentesPorExec = [];
-        }
-
-        // Série de concluídos por dia (finalizado_em)
-        try {
-            $sqlSerie = "SELECT DATE(finalizado_em) AS dia, COUNT(*) AS total
-                         FROM man_checklist_execucoes
-                         WHERE empresa_id = ?
-                           AND status = 'concluido'
-                           AND finalizado_em BETWEEN ? AND ?
-                           $branchFilter
-                         GROUP BY DATE(finalizado_em)
-                         ORDER BY dia ASC";
-            $paramsSerie = array_merge([$companyId, $start->format('Y-m-d H:i:s'), $end->format('Y-m-d H:i:s')], $branchParams);
-            $stmt = $db->prepare($sqlSerie);
-            $stmt->execute($paramsSerie);
-            $serieExecutadas = $stmt->fetchAll();
-        } catch (\Throwable $e) {
-            $serieExecutadas = [];
         }
 
         // Combustivel: resumo do periodo (gasto, litros, preco medio)
@@ -215,8 +176,6 @@ class DashboardController
             'tables' => $tables,
             'counts' => $counts,
             'statusCounts' => $statusCounts,
-            'pendentesPorExec' => $pendentesPorExec,
-            'serieExecutadas' => $serieExecutadas,
             'fuelSummary' => $fuelSummary,
             'serieCombustivel' => $serieCombustivel,
             'tanques' => $tanques,
