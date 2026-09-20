@@ -249,25 +249,6 @@ html.os-agenda-lock .os-page-wrap {
 .os-board-scroll .os-column-header {
     display:none;
 }
-/* Kanban por status: cada coluna rola de forma independente, cabecalho fixo,
-   igual a referencia - sem isso a pagina inteira crescia e "empurrava" o
-   cabecalho pra fora da tela. */
-#os-kanban-view {
-    flex:1 1 auto;
-    min-height:0;
-    display:flex;
-    flex-direction:column;
-}
-#os-kanban-view [data-kanban-panel] {
-    flex:1 1 auto;
-    min-height:0;
-}
-#os-kanban-view .os-column {
-    min-height:0;
-}
-#os-kanban-view .os-dropzone {
-    overflow-y:auto;
-}
 .os-board-container {
     position: relative;
     flex:1 1 auto;
@@ -718,6 +699,13 @@ html.os-agenda-lock .os-page-wrap {
                     <a class="btn btn-sm btn-light os-filter-clear" href="index.php?page=os">Limpar</a>
                 </div>
 
+                <div class="os-filter-bottomline">
+                    <div class="os-pill-group">
+                        <?php foreach (['' => 'Todos'] + $statusLabels as $key => $label): ?>
+                            <button type="submit" name="status" value="<?= sanitize($key) ?>" class="os-pill <?= ($filters['status'] ?? '') === $key ? 'active' : '' ?>"><?= sanitize($label) ?></button>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
             </form>
             </div>
         </div>
@@ -975,7 +963,7 @@ const CSRF_TOKEN = <?= json_encode(csrf_token()) ?>;
             btn.classList.toggle('btn-primary', active);
             btn.classList.toggle('btn-outline-secondary', !active);
         });
-        setPageScrollLock(view === 'agenda' || view === 'kanban');
+        setPageScrollLock(view === 'agenda');
     }
 
     function setMode(mode) {
