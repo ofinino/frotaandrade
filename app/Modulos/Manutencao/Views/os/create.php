@@ -9,7 +9,7 @@ $statusOptions = [
     'analise_aprovacao' => 'Análise e Aprovação',
 ];
 ?>
-<div class="max-w-5xl mx-auto px-4 py-6 space-y-6">
+<div class="max-w-5xl mx-auto px-4 py-6 space-y-6 os-redesign">
     <div class="flex items-center justify-between">
         <h2 class="text-2xl font-semibold text-slate-900">Nova OS</h2>
         <a class="inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50" href="index.php?page=os">Voltar</a>

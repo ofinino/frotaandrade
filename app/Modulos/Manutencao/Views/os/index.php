@@ -648,9 +648,24 @@ html.os-agenda-lock .os-page-wrap {
         width: 100%;
     }
 }
-/* /os-header-layout */</style>
+/* /os-header-layout */
 
-<div class="container-fluid os-page-wrap">
+/* Passe experimental de design (frontend-design) - so vale dentro de .os-redesign */
+.os-redesign .os-toolbar-title { font-family: 'Archivo', sans-serif; font-weight: 800; color: var(--os-ink); }
+.os-redesign .os-card-code { font-family: 'IBM Plex Mono', ui-monospace, monospace; color: var(--os-ink); }
+.os-redesign .os-card { border-radius: 8px; border-left-width: 4px; border-left-color: var(--os-status-color, var(--os-line)); }
+.os-redesign .os-pill.active { background: var(--os-steel); border-color: var(--os-steel); }
+.os-redesign .os-mode-switch .btn.btn-primary,
+.os-redesign .os-view-switch .btn.btn-primary { background: var(--os-steel) !important; }
+.os-redesign .os-apply-btn { background: var(--os-steel); border-color: var(--os-steel); }
+.os-redesign .os-apply-btn:hover { background: var(--os-steel-strong); border-color: var(--os-steel-strong); }
+.os-redesign .os-open-btn { border-color: var(--os-steel); color: var(--os-steel); }
+.os-redesign .os-open-btn:hover { background: var(--os-steel); color: #fff; }
+.os-redesign #os-toggle-page-title,
+.os-redesign h1, .os-redesign h2, .os-redesign h3 { font-family: 'Archivo', sans-serif; }
+</style>
+
+<div class="container-fluid os-page-wrap os-redesign">
     <div class="card shadow-sm border-0 os-compact-card mb-2 os-header-sticky">
         <div class="card-body">
             <div id="os-filter-panel" class="os-filter-panel">
@@ -706,7 +721,7 @@ html.os-agenda-lock .os-page-wrap {
             <?php foreach ($kanbanColumns as $statusKey => $label): ?>
                 <?php $cards = $kanbanCardsByStatus[$statusKey] ?? []; ?>
                 <?php $hc = $kanbanHeaderColors[$statusKey] ?? ['bg' => '#1e293b', 'fg' => '#ffffff', 'wash' => '#f8fafc']; ?>
-                <section class="os-column" style="min-height:200px; background:<?= sanitize($hc['wash']) ?>;">
+                <section class="os-column" style="min-height:200px; background:<?= sanitize($hc['wash']) ?>; --os-status-color: <?= sanitize($hc['bg']) ?>;">
                     <div class="os-column-header" style="background:transparent; border-bottom-color:rgba(15,23,42,.08);">
                         <span class="os-column-title" style="display:inline-flex; align-items:center; padding:4px 12px; border-radius:8px; background:<?= sanitize($hc['bg']) ?>; color:<?= sanitize($hc['fg']) ?>; font-weight:700; font-size:0.85rem;"><?= sanitize($label) ?></span>
                         <div class="os-column-count"><?= count($cards) ?></div>

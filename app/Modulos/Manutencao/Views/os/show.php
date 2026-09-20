@@ -25,11 +25,11 @@ $statusText = $statusLabels[$statusKey] ?? $statusKey;
 $statusClass = $statusColors[$statusKey] ?? 'bg-slate-100 text-slate-700';
 ?>
 
-<div class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+<div class="max-w-6xl mx-auto px-4 py-6 space-y-6 os-redesign">
     <div class="flex flex-wrap items-start justify-between gap-4">
         <div>
             <div class="flex flex-wrap items-center gap-3">
-                <h2 class="text-2xl font-semibold text-slate-900">OS <?= sanitize($os['codigo'] ?? '') ?></h2>
+                <h2 class="text-2xl font-semibold text-slate-900">OS <span class="os-mono"><?= sanitize($os['codigo'] ?? '') ?></span></h2>
                 <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold <?= $statusClass ?>">
                     <?= sanitize($statusText) ?>
                 </span>
@@ -86,7 +86,7 @@ $statusClass = $statusColors[$statusKey] ?? 'bg-slate-100 text-slate-700';
                 </div>
                 <div>
                     <dt class="text-slate-500">Odômetro</dt>
-                    <dd class="font-medium text-slate-800"><?= sanitize($os['odometro_abertura'] ?? '') ?></dd>
+                    <dd class="font-medium text-slate-800 os-mono"><?= sanitize($os['odometro_abertura'] ?? '') ?></dd>
                 </div>
                 <div>
                     <dt class="text-slate-500">SS vinculadas</dt>
@@ -108,7 +108,7 @@ $statusClass = $statusColors[$statusKey] ?? 'bg-slate-100 text-slate-700';
                         <div class="flex items-center justify-between">
                             <div class="font-semibold text-slate-800"><?= sanitize($it['titulo']) ?></div>
                             <div class="flex items-center gap-2">
-                                <span class="text-sm font-medium text-slate-700">R$ <?= number_format((float)($it['valor'] ?? 0), 2, ',', '.') ?></span>
+                                <span class="text-sm font-medium text-slate-700 os-mono">R$ <?= number_format((float)($it['valor'] ?? 0), 2, ',', '.') ?></span>
                                 <span class="text-xs font-medium text-slate-500"><?= ucfirst(sanitize($it['status'])) ?></span>
                             </div>
                         </div>
