@@ -33,7 +33,7 @@ if ($isAppHost || $hasAppParams) {
             'planos_preventiva' => ['mod' => 'manutencao', 'ctrl' => 'PlanosPreventiva', 'action' => 'index', 'actions' => ['index', 'create', 'store', 'show', 'publish', 'toggleStatus', 'addService', 'removeService', 'addVeiculo', 'removeVeiculo', 'run']],
             'vencimentos_preventiva' => ['mod' => 'manutencao', 'ctrl' => 'PlanosPreventiva', 'action' => 'vencimentos', 'actions' => ['vencimentos']],
             'manutencao_servicos' => ['mod' => 'manutencao', 'ctrl' => 'ManutencaoServicos', 'action' => 'index', 'actions' => ['index', 'store', 'toggle']],
-            'abastecimentos' => ['mod' => 'combustivel', 'ctrl' => 'Abastecimentos', 'action' => 'index', 'actions' => ['index', 'create', 'store', 'destroy']],
+            'abastecimentos' => ['mod' => 'combustivel', 'ctrl' => 'Abastecimentos', 'action' => 'index', 'actions' => ['index', 'create', 'store', 'destroy', 'success']],
             'meus_tanques' => ['mod' => 'combustivel', 'ctrl' => 'Tanques', 'action' => 'index', 'actions' => ['index', 'store', 'update', 'destroy', 'toggleAtivo', 'addPurchase', 'updatePurchase', 'destroyPurchase']],
             'combustivel_tipos' => ['mod' => 'combustivel', 'ctrl' => 'FuelTypes', 'action' => 'index', 'actions' => ['index', 'store', 'toggle']],
         ];

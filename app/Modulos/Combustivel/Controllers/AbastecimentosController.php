@@ -5,6 +5,7 @@ use App\Core\View;
 use App\Modulos\Combustivel\Models\FuelRecordsModel;
 use App\Modulos\Combustivel\Models\FuelTanksModel;
 use App\Modulos\Combustivel\Models\FornecedoresModel;
+use App\Modulos\Combustivel\Models\FuelTypesModel;
 use App\Modulos\Manutencao\Models\AnexosModel;
 
 class AbastecimentosController
@@ -12,8 +13,11 @@ class AbastecimentosController
     private FuelRecordsModel $model;
     private FuelTanksModel $tanksModel;
     private FornecedoresModel $fornecedoresModel;
+    private FuelTypesModel $fuelTypesModel;
     private AnexosModel $anexosModel;
     private \PDO $db;
+
+    private const POR_PAGINA_PADRAO = 20;
 
     public function __construct()
     {
@@ -24,6 +28,7 @@ class AbastecimentosController
         $this->model = new FuelRecordsModel($this->db, $empresaId, $filialId);
         $this->tanksModel = new FuelTanksModel($this->db, $empresaId, $filialId);
         $this->fornecedoresModel = new FornecedoresModel($this->db, $empresaId, $filialId);
+        $this->fuelTypesModel = new FuelTypesModel($this->db, $empresaId, $filialId);
         $this->anexosModel = new AnexosModel($this->db, $empresaId, $filialId, $filiais);
     }
 
@@ -45,15 +50,29 @@ class AbastecimentosController
             'veiculo_id' => $_GET['veiculo_id'] ?? null,
             'de' => $_GET['de'] ?? null,
             'ate' => $_GET['ate'] ?? null,
+            'apenas_inconsistentes' => ($_GET['aba'] ?? 'todos') === 'inconsistentes',
         ];
-        $records = $this->model->listar($filters);
+        $todos = $this->model->listarTudo($filters);
+        $resumo = $this->model->resumo($todos);
+
+        $pagina = max(1, (int)($_GET['pagina'] ?? 1));
+        $porPagina = max(1, (int)($_GET['por_pagina'] ?? self::POR_PAGINA_PADRAO));
+        $totalPaginas = max(1, (int)ceil(count($todos) / $porPagina));
+        $pagina = min($pagina, $totalPaginas);
+        $records = array_slice($todos, ($pagina - 1) * $porPagina, $porPagina);
+
         $anexosByRecord = $this->model->listarAnexosPorRegistros(array_column($records, 'id'));
         View::render('Combustivel', 'abastecimentos/index', [
             'title' => 'Abastecimentos',
             'records' => $records,
+            'resumo' => $resumo,
             'anexosByRecord' => $anexosByRecord,
             'veiculos' => $this->listarVeiculos(),
             'filters' => $filters,
+            'pagina' => $pagina,
+            'porPagina' => $porPagina,
+            'totalPaginas' => $totalPaginas,
+            'totalRegistros' => count($todos),
         ]);
     }
 
@@ -69,6 +88,7 @@ class AbastecimentosController
             'veiculos' => $this->listarVeiculos(),
             'fornecedores' => $this->fornecedoresModel->listar(),
             'tanks' => $this->tanksModel->listarAtivos(),
+            'tiposCombustivel' => $this->fuelTypesModel->listar(true),
         ]);
     }
 
@@ -85,16 +105,16 @@ class AbastecimentosController
         $dataHora = trim($_POST['data_hora'] ?? '');
         $quantidade = $_POST['quantidade'] ?? null;
         $odometro = $_POST['odometro'] ?? null;
-        $combustivelTipo = $_POST['combustivel_tipo'] ?? 'diesel';
-        $allowedCombustivel = ['alcool', 'arla32', 'diesel', 'diesel_s10', 'gasolina', 'gasolina_aditivada'];
+        $combustivelTipoId = (int)($_POST['combustivel_tipo_id'] ?? 0);
 
         if (!$veiculoId || $dataHora === '' || !is_numeric($quantidade) || (float)$quantidade <= 0 || !is_numeric($odometro)) {
             flash('error', 'Preencha veiculo, data, quantidade e odometro corretamente.');
             header('Location: index.php?mod=combustivel&ctrl=Abastecimentos&action=create');
             return;
         }
-        if (!in_array($combustivelTipo, $allowedCombustivel, true)) {
-            flash('error', 'Tipo de combustivel invalido.');
+        $tipoCombustivel = $combustivelTipoId ? $this->fuelTypesModel->obter($combustivelTipoId) : null;
+        if (!$tipoCombustivel) {
+            flash('error', 'Selecione um tipo de combustivel valido.');
             header('Location: index.php?mod=combustivel&ctrl=Abastecimentos&action=create');
             return;
         }
@@ -112,8 +132,9 @@ class AbastecimentosController
             'data_hora' => str_replace('T', ' ', $dataHora) . (strlen($dataHora) === 16 ? ':00' : ''),
             'quantidade' => $quantidade,
             'odometro' => $odometro,
-            'combustivel_tipo' => $combustivelTipo,
+            'combustivel_tipo_id' => $combustivelTipoId,
             'tanque_cheio' => !empty($_POST['tanque_cheio']),
+            'atualizar_odometro' => !empty($_POST['atualizar_odometro']),
             'observacoes' => $_POST['observacoes'] ?? null,
             'criado_por' => current_user()['id'] ?? null,
         ];
@@ -150,8 +171,35 @@ class AbastecimentosController
             $this->anexosModel->salvar('abastecimento', $recordId, $_FILES['anexos'], (int)(current_user()['id'] ?? 0));
         }
 
-        flash('success', 'Abastecimento registrado.');
-        header('Location: index.php?page=abastecimentos');
+        header('Location: index.php?mod=combustivel&ctrl=Abastecimentos&action=success&id=' . $recordId);
+    }
+
+    public function success(): void
+    {
+        if (!has_permission('combustivel.manage')) {
+            flash('error', 'Sem permissao.');
+            header('Location: index.php?page=abastecimentos');
+            return;
+        }
+        $id = (int)($_GET['id'] ?? 0);
+        $record = $this->model->obter($id);
+        if (!$record) {
+            flash('success', 'Abastecimento registrado.');
+            header('Location: index.php?page=abastecimentos');
+            return;
+        }
+        $veiculo = null;
+        $stmt = $this->db->prepare('SELECT plate, model FROM cad_veiculos WHERE id = ?');
+        $stmt->execute([$record['veiculo_id']]);
+        $veiculo = $stmt->fetch();
+        $tipoCombustivel = $this->fuelTypesModel->obter((int)$record['combustivel_tipo_id']);
+
+        View::render('Combustivel', 'abastecimentos/success', [
+            'title' => 'Abastecimento registrado',
+            'record' => $record,
+            'veiculo' => $veiculo,
+            'combustivelNome' => $tipoCombustivel['nome'] ?? '',
+        ]);
     }
 
     public function destroy(): void

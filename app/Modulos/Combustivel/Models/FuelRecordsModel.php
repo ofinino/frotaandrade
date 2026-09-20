@@ -7,6 +7,8 @@ class FuelRecordsModel
     private int $empresaId;
     private ?int $filialId;
 
+    public const AUTONOMIA_MINIMA_PLAUSIVEL = 1.0;
+
     public function __construct(\PDO $db, int $empresaId, ?int $filialId)
     {
         $this->db = $db;
@@ -14,10 +16,17 @@ class FuelRecordsModel
         $this->filialId = $filialId;
     }
 
-    public function listar(array $filters = []): array
+    /**
+     * Busca todos os registros que batem com os filtros (sem paginacao), ja com
+     * medida_percorrida/autonomia_media/inconsistente calculados. Paginacao e
+     * resumo (totais) sao derivados disso em PHP - o volume de abastecimentos
+     * de uma frota nao justifica replicar esse calculo em SQL agregado.
+     */
+    public function listarTudo(array $filters = []): array
     {
         $sql = "SELECT r.*, v.plate AS veiculo_plate, v.model AS veiculo_model,
                     f.nome AS fornecedor_nome, t.nome AS tank_nome, u.name AS criado_por_nome,
+                    ft.nome AS combustivel_nome,
                     (SELECT r2.odometro FROM man_fuel_records r2
                      WHERE r2.veiculo_id = r.veiculo_id
                        AND (r2.data_hora < r.data_hora OR (r2.data_hora = r.data_hora AND r2.id < r.id))
@@ -27,6 +36,7 @@ class FuelRecordsModel
                 LEFT JOIN cad_veiculos v ON v.id = r.veiculo_id
                 LEFT JOIN cad_fornecedores f ON f.id = r.fornecedor_id
                 LEFT JOIN man_fuel_tanks t ON t.id = r.tank_id
+                LEFT JOIN man_fuel_types ft ON ft.id = r.combustivel_tipo_id
                 LEFT JOIN seg_usuarios u ON u.id = r.criado_por
                 WHERE r.empresa_id = ?";
         $params = [$this->empresaId];
@@ -59,9 +69,29 @@ class FuelRecordsModel
                     }
                 }
             }
+            $row['inconsistente'] = $row['autonomia_media'] !== null && $row['autonomia_media'] < self::AUTONOMIA_MINIMA_PLAUSIVEL;
         }
         unset($row);
+
+        if (!empty($filters['apenas_inconsistentes'])) {
+            $rows = array_values(array_filter($rows, fn($r) => $r['inconsistente']));
+        }
+
         return $rows;
+    }
+
+    public function resumo(array $rows): array
+    {
+        $custosValidos = array_values(array_filter($rows, fn($r) => $r['custo'] !== null));
+        $totalCusto = array_sum(array_map(fn($r) => (float)$r['custo'], $custosValidos));
+        $totalQuantidadeComCusto = array_sum(array_map(fn($r) => (float)$r['quantidade'], $custosValidos));
+        return [
+            'total_abastecimentos' => count($rows),
+            'custo_total' => $totalCusto,
+            'preco_medio' => $totalQuantidadeComCusto > 0 ? $totalCusto / $totalQuantidadeComCusto : 0.0,
+            'quantidade_total' => array_sum(array_map(fn($r) => (float)$r['quantidade'], $rows)),
+            'total_inconsistentes' => count(array_filter($rows, fn($r) => $r['inconsistente'])),
+        ];
     }
 
     public function listarAnexosPorRegistros(array $ids): array
@@ -111,7 +141,9 @@ class FuelRecordsModel
 
     private function sincronizarOdometroVeiculo(int $veiculoId): void
     {
-        $stmt = $this->db->prepare('SELECT MAX(odometro) FROM man_fuel_records WHERE veiculo_id = ? AND empresa_id = ?');
+        $stmt = $this->db->prepare(
+            'SELECT MAX(odometro) FROM man_fuel_records WHERE veiculo_id = ? AND empresa_id = ? AND atualizar_odometro = 1'
+        );
         $stmt->execute([$veiculoId, $this->empresaId]);
         $max = $stmt->fetchColumn();
         if ($max !== null && $max !== false) {
@@ -140,8 +172,8 @@ class FuelRecordsModel
                 $custo = $valorLitro !== null ? round($valorLitro * $quantidade, 2) : null;
             }
             $stmt = $this->db->prepare(
-                'INSERT INTO man_fuel_records (empresa_id, filial_id, veiculo_id, tipo, fornecedor_id, tank_id, data_hora, quantidade, odometro, combustivel_tipo, custo, valor_litro, tanque_cheio, observacoes, criado_por, created_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
+                'INSERT INTO man_fuel_records (empresa_id, filial_id, veiculo_id, tipo, fornecedor_id, tank_id, data_hora, quantidade, odometro, combustivel_tipo_id, custo, valor_litro, tanque_cheio, atualizar_odometro, observacoes, criado_por, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
             );
             $stmt->execute([
                 $this->empresaId,
@@ -153,10 +185,11 @@ class FuelRecordsModel
                 $data['data_hora'],
                 $quantidade,
                 $data['odometro'],
-                $data['combustivel_tipo'],
+                $data['combustivel_tipo_id'],
                 $custo,
                 $valorLitro,
                 !empty($data['tanque_cheio']) ? 1 : 0,
+                !empty($data['atualizar_odometro']) ? 1 : 0,
                 $data['observacoes'] ?? null,
                 $data['criado_por'] ?? null,
             ]);

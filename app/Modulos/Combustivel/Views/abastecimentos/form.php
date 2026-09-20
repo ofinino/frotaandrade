@@ -2,6 +2,7 @@
 $veiculos = $veiculos ?? [];
 $fornecedores = $fornecedores ?? [];
 $tanks = $tanks ?? [];
+$tiposCombustivel = $tiposCombustivel ?? [];
 ?>
 <div class="max-w-xl mx-auto px-4 py-6">
     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 space-y-5">
@@ -63,15 +64,14 @@ $tanks = $tanks ?? [];
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Combustível</label>
-                    <select class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" name="combustivel_tipo">
-                        <option value="alcool">Álcool</option>
-                        <option value="arla32">Arla 32</option>
-                        <option value="diesel" selected>Diesel</option>
-                        <option value="diesel_s10">Diesel S10</option>
-                        <option value="gasolina">Gasolina</option>
-                        <option value="gasolina_aditivada">Gasolina aditivada</option>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Combustível *</label>
+                    <select class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" name="combustivel_tipo_id" required>
+                        <option value="">Tipo de combustível</option>
+                        <?php foreach ($tiposCombustivel as $ct): ?>
+                            <option value="<?= sanitize($ct['id']) ?>"><?= sanitize($ct['nome']) ?></option>
+                        <?php endforeach; ?>
                     </select>
+                    <p class="mt-1 text-xs text-slate-500"><a class="text-blue-600 hover:underline" href="index.php?page=combustivel_tipos">Gerenciar tipos de combustível</a></p>
                 </div>
                 <div id="campo-custo">
                     <label class="block text-sm font-medium text-slate-700 mb-1">Custo (R$) *</label>
@@ -81,6 +81,17 @@ $tanks = $tanks ?? [];
                 <div class="md:col-span-2 flex items-center gap-2">
                     <input type="checkbox" id="tanque_cheio" name="tanque_cheio" value="1" class="rounded border-slate-300">
                     <label for="tanque_cheio" class="text-sm text-slate-700">Tanque cheio</label>
+                </div>
+
+                <div class="md:col-span-2 flex items-start gap-3 rounded-lg border border-slate-200 px-3 py-2">
+                    <button type="button" id="atualizar-odometro-toggle" data-on="0" class="relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full bg-slate-200 transition-colors mt-0.5">
+                        <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow translate-x-1 transition-transform"></span>
+                    </button>
+                    <input type="hidden" name="atualizar_odometro" id="atualizar_odometro" value="0">
+                    <div>
+                        <div class="text-sm font-medium text-slate-800">Atualizar odômetro</div>
+                        <div class="text-xs text-slate-500">Utilizar odômetro para atualizar a medição atual do veículo.</div>
+                    </div>
                 </div>
 
                 <div class="md:col-span-2">
@@ -128,6 +139,18 @@ $tanks = $tanks ?? [];
             campoCusto.classList.toggle('hidden', tipo !== 'comercial');
             campoTanque.classList.toggle('hidden', tipo !== 'interno');
         });
+    });
+
+    const odometroToggle = document.getElementById('atualizar-odometro-toggle');
+    const odometroInput = document.getElementById('atualizar_odometro');
+    odometroToggle.addEventListener('click', function() {
+        const ligado = this.dataset.on === '1';
+        this.dataset.on = ligado ? '0' : '1';
+        odometroInput.value = ligado ? '0' : '1';
+        this.classList.toggle('bg-slate-900', !ligado);
+        this.classList.toggle('bg-slate-200', ligado);
+        this.querySelector('span').classList.toggle('translate-x-6', !ligado);
+        this.querySelector('span').classList.toggle('translate-x-1', ligado);
     });
 })();
 </script>
