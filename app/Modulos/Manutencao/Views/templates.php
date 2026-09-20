@@ -3,6 +3,7 @@
 // Espera: $templates, $fieldsByTemplate, $groups, $editingTemplate, $editingFields.
 ?>
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <?php if (has_permission('templates.manage')): ?>
     <div class="bg-white border border-slate-100 shadow rounded-lg p-4">
         <div class="flex items-start justify-between mb-3">
             <div>
@@ -14,6 +15,7 @@
             </button>
         </div>
         <form method="post" class="space-y-3" id="template-form">
+<?= csrf_field() ?>
             <?php if (!empty($editingTemplate)): ?>
                 <input type="hidden" name="edit_id" value="<?= (int)$editingTemplate['id'] ?>" />
             <?php endif; ?>
@@ -53,7 +55,8 @@
             </div>
         </form>
     </div>
-    <div class="lg:col-span-2 space-y-3">
+    <?php endif; ?>
+    <div class="<?= has_permission('templates.manage') ? 'lg:col-span-2' : 'lg:col-span-3' ?> space-y-3">
         <?php if (empty($templates)): ?>
             <div class="bg-white border border-slate-100 shadow rounded-lg p-4 text-sm text-slate-600">
                 Nenhum modelo cadastrado ainda.
@@ -84,16 +87,30 @@
                         <?php endif; ?>
                     </div>
                     <div class="text-sm text-right space-x-2">
-                        <a class="text-blue-600" href="index.php?page=templates&revise=<?= (int)$tpl['id'] ?>">Revisar</a>
-                        <?php if ($inativo): ?>
-                            <a class="text-emerald-600" href="index.php?page=templates&activate=<?= (int)$tpl['id'] ?>">Ativar</a>
-                        <?php else: ?>
-                            <a class="text-amber-600" href="index.php?page=templates&deactivate=<?= (int)$tpl['id'] ?>" onclick="return confirm('Inativar modelo? Não aparecerá em novas execuções.');">Inativar</a>
-                        <?php endif; ?>
-                        <?php if ($countExec === 0): ?>
-                            <a class="text-rose-600" href="index.php?page=templates&delete=<?= (int)$tpl['id'] ?>" onclick="return confirm('Remover modelo? Todos os campos e respostas serão apagados.');">Excluir</a>
-                        <?php else: ?>
-                            <span class="text-slate-400 cursor-not-allowed" title="Possui execuções e não pode ser excluído">Excluir</span>
+                        <?php if (has_permission('templates.manage')): ?>
+                            <a class="text-blue-600" href="index.php?page=templates&revise=<?= (int)$tpl['id'] ?>">Revisar</a>
+                            <?php if ($inativo): ?>
+                                <form method="post" class="inline-block">
+<?= csrf_field() ?>
+                                    <input type="hidden" name="activate" value="<?= (int)$tpl['id'] ?>">
+                                    <button type="submit" class="text-emerald-600 bg-transparent border-0 p-0 cursor-pointer">Ativar</button>
+                                </form>
+                            <?php else: ?>
+                                <form method="post" class="inline-block" onsubmit="return confirm('Inativar modelo? Não aparecerá em novas execuções.');">
+<?= csrf_field() ?>
+                                    <input type="hidden" name="deactivate" value="<?= (int)$tpl['id'] ?>">
+                                    <button type="submit" class="text-amber-600 bg-transparent border-0 p-0 cursor-pointer">Inativar</button>
+                                </form>
+                            <?php endif; ?>
+                            <?php if ($countExec === 0): ?>
+                                <form method="post" class="inline-block" onsubmit="return confirm('Remover modelo? Todos os campos e respostas serão apagados.');">
+<?= csrf_field() ?>
+                                    <input type="hidden" name="delete" value="<?= (int)$tpl['id'] ?>">
+                                    <button type="submit" class="text-rose-600 bg-transparent border-0 p-0 cursor-pointer">Excluir</button>
+                                </form>
+                            <?php else: ?>
+                                <span class="text-slate-400 cursor-not-allowed" title="Possui execuções e não pode ser excluído">Excluir</span>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -154,6 +171,9 @@
 (function() {
     const fields = document.getElementById('fields');
     const addBtn = document.getElementById('add-field');
+    if (!fields || !addBtn) {
+        return;
+    }
     let index = 0;
     let dragItem = null;
 

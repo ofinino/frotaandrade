@@ -6,25 +6,48 @@ $filters = $filters ?? [];
 $agendaDate = $agendaDate ?? date('Y-m-d');
 
 $statusLabels = [
-    'rascunho' => 'Rascunho',
-    'aprovada' => 'Aprovada',
-    'programada' => 'Programada',
-    'em_execucao' => 'Em execucao',
-    'aguardando_pecas' => 'Aguardando pecas',
-    'concluida' => 'Concluida',
+    'solicitacao' => 'Solicitação',
+    'aguardando_agendamento' => 'Aguardando/Agendado',
+    'em_execucao' => 'Em execução',
+    'analise_aprovacao' => 'Análise e Aprovação',
     'encerrada' => 'Encerrada',
     'cancelada' => 'Cancelada',
 ];
 $statusColors = [
-    'rascunho' => 'bg-slate-100 text-slate-700',
-    'aprovada' => 'bg-blue-100 text-blue-800',
-    'programada' => 'bg-indigo-100 text-indigo-800',
+    'solicitacao' => 'bg-slate-100 text-slate-700',
+    'aguardando_agendamento' => 'bg-indigo-100 text-indigo-800',
     'em_execucao' => 'bg-amber-100 text-amber-800',
-    'aguardando_pecas' => 'bg-rose-100 text-rose-800',
-    'concluida' => 'bg-emerald-100 text-emerald-800',
-    'encerrada' => 'bg-slate-200 text-slate-800',
+    'analise_aprovacao' => 'bg-orange-100 text-orange-800',
+    'encerrada' => 'bg-emerald-100 text-emerald-800',
     'cancelada' => 'bg-gray-200 text-gray-700',
 ];
+$kanbanColumns = [
+    'solicitacao' => 'Solicitação',
+    'aguardando_agendamento' => 'Aguardando/Agendado',
+    'em_execucao' => 'Em Execução',
+    'analise_aprovacao' => 'Análise e Aprovação',
+    'encerrada' => 'Encerrada',
+    'cancelada' => 'Cancelada',
+];
+$kanbanDraggable = ['solicitacao', 'aguardando_agendamento', 'em_execucao', 'analise_aprovacao'];
+$kanbanHeaderColors = [
+    'solicitacao' => ['bg' => '#1e293b', 'fg' => '#ffffff', 'wash' => '#f8fafc'],
+    'aguardando_agendamento' => ['bg' => '#7c3aed', 'fg' => '#ffffff', 'wash' => '#f5f3ff'],
+    'em_execucao' => ['bg' => '#16a34a', 'fg' => '#ffffff', 'wash' => '#f0fdf4'],
+    'analise_aprovacao' => ['bg' => '#ea580c', 'fg' => '#ffffff', 'wash' => '#fff7ed'],
+    'encerrada' => ['bg' => '#059669', 'fg' => '#ffffff', 'wash' => '#ecfdf5'],
+    'cancelada' => ['bg' => '#6b7280', 'fg' => '#ffffff', 'wash' => '#f9fafb'],
+];
+$kanbanCardsByStatus = [
+    'solicitacao' => [], 'aguardando_agendamento' => [], 'em_execucao' => [],
+    'analise_aprovacao' => [], 'encerrada' => [], 'cancelada' => [],
+];
+foreach ($orders as $osRow) {
+    $st = $osRow['status'] ?? 'solicitacao';
+    if (isset($kanbanCardsByStatus[$st])) {
+        $kanbanCardsByStatus[$st][] = $osRow;
+    }
+}
 
 $getProgramadaDate = static function (?string $programada): ?string {
     $raw = trim((string)$programada);
@@ -230,6 +253,53 @@ html.os-agenda-lock .os-page-wrap {
 }
 .os-board-scroll .os-column-header {
     display:none;
+}
+/* Kanban por status: cada coluna rola de forma independente, cabecalho fixo,
+   igual a referencia (ordem de servico exemplo.mp4) - sem isso a pagina
+   inteira crescia e "empurrava" o cabecalho pra fora da tela. */
+#os-kanban-view {
+    flex:1 1 auto;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+}
+#os-kanban-grid {
+    flex:1 1 auto;
+    min-height:0;
+}
+#os-kanban-grid .os-column {
+    min-height:0;
+}
+#os-kanban-grid .os-dropzone {
+    overflow-y:auto;
+    scrollbar-width:thin;
+    scrollbar-color:#cbd5e1 transparent;
+}
+#os-kanban-grid .os-dropzone::-webkit-scrollbar { width:6px; }
+#os-kanban-grid .os-dropzone::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:3px; }
+#os-kanban-grid .os-dropzone::-webkit-scrollbar-track { background:transparent; }
+/* Lista: mesma ideia - cabecalho da tabela fixo, só as linhas rolam. */
+#os-lista-view {
+    flex:1 1 auto;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+}
+#os-lista-view .table-responsive {
+    flex:1 1 auto;
+    min-height:0;
+    overflow-y:auto;
+    scrollbar-width:thin;
+    scrollbar-color:#cbd5e1 transparent;
+}
+#os-lista-view .table-responsive::-webkit-scrollbar { width:6px; }
+#os-lista-view .table-responsive::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:3px; }
+#os-lista-view .table-responsive::-webkit-scrollbar-track { background:transparent; }
+#os-lista-view thead th {
+    position:sticky;
+    top:0;
+    z-index:1;
+    background:#f8fafc;
 }
 .os-board-container {
     position: relative;
@@ -487,28 +557,6 @@ html.os-agenda-lock .os-page-wrap {
     line-height: 1.15;
 }
 
-.os-mini-nav {
-    width: 40px;
-    height: 40px;
-    border: 1px solid #d5dde8;
-    border-radius: 10px;
-    background: #f8fafc;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-}
-.os-mini-nav span {
-    display: block;
-    width: 16px;
-    height: 2px;
-    background: #334155;
-    border-radius: 2px;
-}
-.os-mini-nav span + span {
-    margin-top: 3px;
-}
-
 .os-filterbar {
     margin-top: 4px;
     gap: 6px;
@@ -652,9 +700,24 @@ html.os-agenda-lock .os-page-wrap {
         width: 100%;
     }
 }
-/* /os-header-layout */</style>
+/* /os-header-layout */
 
-<div class="container-fluid os-page-wrap">
+/* Passe experimental de design (frontend-design) - so vale dentro de .os-redesign */
+.os-redesign .os-toolbar-title { font-family: 'Archivo', sans-serif; font-weight: 800; color: var(--os-ink); }
+.os-redesign .os-card-code { font-family: 'IBM Plex Mono', ui-monospace, monospace; color: var(--os-ink); }
+.os-redesign .os-card { border-radius: 8px; border-left-width: 4px; border-left-color: var(--os-status-color, var(--os-line)); }
+.os-redesign .os-pill.active { background: var(--os-steel); border-color: var(--os-steel); }
+.os-redesign .os-mode-switch .btn.btn-primary,
+.os-redesign .os-view-switch .btn.btn-primary { background: var(--os-steel) !important; }
+.os-redesign .os-apply-btn { background: var(--os-steel); border-color: var(--os-steel); }
+.os-redesign .os-apply-btn:hover { background: var(--os-steel-strong); border-color: var(--os-steel-strong); }
+.os-redesign .os-open-btn { border-color: var(--os-steel); color: var(--os-steel); }
+.os-redesign .os-open-btn:hover { background: var(--os-steel); color: #fff; }
+.os-redesign #os-toggle-page-title,
+.os-redesign h1, .os-redesign h2, .os-redesign h3 { font-family: 'Archivo', sans-serif; }
+</style>
+
+<div class="container-fluid os-page-wrap os-redesign">
     <div class="card shadow-sm border-0 os-compact-card mb-2 os-header-sticky">
         <div class="card-body">
             <div id="os-filter-panel" class="os-filter-panel">
@@ -668,7 +731,8 @@ html.os-agenda-lock .os-page-wrap {
                             <button type="button" class="btn btn-sm btn-outline-secondary" data-board-mode="week">Semana</button>
                         </div>
                         <div class="os-view-switch">
-                            <button type="button" class="btn btn-sm btn-primary" data-view="agenda">Agenda</button>
+                            <button type="button" class="btn btn-sm btn-primary" data-view="kanban">Kanban</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-view="agenda">Agenda</button>
                             <button type="button" class="btn btn-sm btn-outline-secondary" data-view="lista">Lista</button>
                         </div>
                     </div>
@@ -699,7 +763,49 @@ html.os-agenda-lock .os-page-wrap {
         </div>
     </div>
 
-    <div id="os-agenda-view" class="card shadow-sm border-0 os-compact-card mb-2">
+    <div id="os-kanban-view" class="space-y-3" style="display:none;">
+        <div id="os-kanban-grid" style="display:grid; gap:12px; grid-template-columns: repeat(6, minmax(230px, 1fr));">
+            <?php foreach ($kanbanColumns as $statusKey => $label): ?>
+                <?php $cards = $kanbanCardsByStatus[$statusKey] ?? []; ?>
+                <?php $hc = $kanbanHeaderColors[$statusKey] ?? ['bg' => '#1e293b', 'fg' => '#ffffff', 'wash' => '#f8fafc']; ?>
+                <?php $arrastavel = in_array($statusKey, $kanbanDraggable, true); ?>
+                <section class="os-column" style="min-height:200px; background:<?= sanitize($hc['wash']) ?>; --os-status-color: <?= sanitize($hc['bg']) ?>;">
+                    <div class="os-column-header" style="background:transparent; border-bottom-color:rgba(15,23,42,.08);">
+                        <span class="os-column-title" style="display:inline-flex; align-items:center; padding:4px 12px; border-radius:8px; background:<?= sanitize($hc['bg']) ?>; color:<?= sanitize($hc['fg']) ?>; font-weight:700; font-size:0.85rem;"><?= sanitize($label) ?></span>
+                        <div class="os-column-count"><?= count($cards) ?></div>
+                    </div>
+                    <div class="os-dropzone" <?= $arrastavel ? 'data-kanban-dropzone="' . sanitize($statusKey) . '"' : '' ?> style="min-height:150px; background:transparent;">
+                        <?php if (!$cards): ?>
+                            <div class="os-empty">Sem OS nesta coluna.</div>
+                        <?php endif; ?>
+                        <?php foreach ($cards as $kOs): ?>
+                            <?php
+                                $diasAberta = '';
+                                if (!empty($kOs['aberta_em'])) {
+                                    $diff = (new DateTime())->diff(new DateTime($kOs['aberta_em']));
+                                    $diasAberta = 'Há ' . $diff->days . ' dias';
+                                }
+                            ?>
+                            <article class="os-card" <?= $arrastavel ? 'draggable="true"' : '' ?> data-os-id="<?= sanitize($kOs['id']) ?>" data-status="<?= sanitize($statusKey) ?>">
+                                <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                                    <div class="os-card-code"><?= sanitize($kOs['codigo']) ?></div>
+                                </div>
+                                <div class="os-card-meta mb-1"><?= sanitize($diasAberta) ?></div>
+                                <div class="os-card-meta mb-1"><?= sanitize($kOs['vehicle_plate'] ?? '-') ?></div>
+                                <div class="os-card-meta mb-1"><?= sanitize($kOs['motivo_abertura'] ?? '') ?></div>
+                                <div class="os-card-meta mb-2"><?= sanitize($kOs['servicos_titulos'] ?? '') ?></div>
+                                <div class="os-card-actions">
+                                    <a class="btn btn-sm btn-outline-primary os-open-btn" href="index.php?mod=manutencao&ctrl=OrdensServico&action=show&id=<?= sanitize($kOs['id']) ?>">Abrir OS</a>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
+    <div id="os-agenda-view" class="card shadow-sm border-0 os-compact-card mb-2" style="display:none;">
         <div class="card-body pb-1">
             <div id="os-board-executor" class="os-board-container">
                 <div class="os-board-wrap">
@@ -856,16 +962,17 @@ html.os-agenda-lock .os-page-wrap {
 </div>
 
 <script>
+const CSRF_TOKEN = <?= json_encode(csrf_token()) ?>;
 (function() {
     const agendaView = document.getElementById('os-agenda-view');
     const listaView = document.getElementById('os-lista-view');
+    const kanbanView = document.getElementById('os-kanban-view');
     const viewButtons = document.querySelectorAll('[data-view]');
     const modeButtons = document.querySelectorAll('[data-board-mode]');
     const boardExecutor = document.getElementById('os-board-executor');
     const boardWeek = document.getElementById('os-board-week');
     const filterPanel = document.getElementById('os-filter-panel');
     const filterToggle = document.getElementById('os-toggle-filters');
-    const miniNav = document.getElementById('os-mini-nav');
     function setPageScrollLock(enabled) {
         document.documentElement.classList.toggle('os-agenda-lock', !!enabled);
         if (document.body) {
@@ -873,15 +980,15 @@ html.os-agenda-lock .os-page-wrap {
         }
     }
     function setView(view) {
-        const isAgenda = view === 'agenda';
-        agendaView.style.display = isAgenda ? '' : 'none';
-        listaView.style.display = isAgenda ? 'none' : '';
+        agendaView.style.display = view === 'agenda' ? '' : 'none';
+        listaView.style.display = view === 'lista' ? '' : 'none';
+        kanbanView.style.display = view === 'kanban' ? '' : 'none';
         viewButtons.forEach((btn) => {
             const active = btn.dataset.view === view;
             btn.classList.toggle('btn-primary', active);
             btn.classList.toggle('btn-outline-secondary', !active);
         });
-        setPageScrollLock(isAgenda);
+        setPageScrollLock(view === 'agenda' || view === 'kanban' || view === 'lista');
     }
 
     function setMode(mode) {
@@ -949,7 +1056,7 @@ html.os-agenda-lock .os-page-wrap {
         });
     });
 
-    setView('agenda');
+    setView('kanban');
     setMode('executor');
     buildPinnedHeaders();
 
@@ -960,11 +1067,6 @@ html.os-agenda-lock .os-page-wrap {
         /* ignore */
     }
     setFilterPanel(storedFiltersCollapsed);
-
-    miniNav?.addEventListener('click', function() {
-        const nav = document.getElementById('nav-open-main');
-        nav?.click();
-    });
 
     filterToggle?.addEventListener('click', function() {
         const nextCollapsed = filterPanel ? !filterPanel.classList.contains('is-collapsed') : true;
@@ -1312,6 +1414,7 @@ html.os-agenda-lock .os-page-wrap {
 
     async function persistSchedule(osId, executorId, programadaPara) {
         const body = new URLSearchParams();
+        body.append('csrf_token', CSRF_TOKEN);
         body.append('os_id', osId);
         if (executorId) {
             body.append('executor_id', executorId);
@@ -1437,6 +1540,53 @@ html.os-agenda-lock .os-page-wrap {
                 refreshCounts();
                 const msg = (err && err.message) ? err.message : 'Nao foi possivel salvar o planejamento da OS.';
                 window.alert(msg);
+            }
+        });
+    });
+
+    let draggedKanbanCard = null;
+    document.querySelectorAll('#os-kanban-view .os-card[draggable="true"]').forEach((card) => {
+        card.addEventListener('dragstart', () => { draggedKanbanCard = card; card.classList.add('dragging'); });
+        card.addEventListener('dragend', () => { card.classList.remove('dragging'); draggedKanbanCard = null; });
+    });
+
+    function getChangeStatusDragUrl() {
+        const url = new URL(window.location.href);
+        url.search = 'mod=manutencao&ctrl=OrdensServico&action=changeStatusDrag';
+        return url.toString();
+    }
+
+    document.querySelectorAll('[data-kanban-dropzone]').forEach((zone) => {
+        zone.addEventListener('dragover', (e) => e.preventDefault());
+        zone.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            if (!draggedKanbanCard) return;
+            const card = draggedKanbanCard;
+            const oldZone = card.closest('[data-kanban-dropzone]');
+            const newStatus = zone.dataset.kanbanDropzone;
+            if (!oldZone || oldZone === zone) return;
+
+            zone.appendChild(card);
+            card.dataset.status = newStatus;
+
+            const body = new URLSearchParams();
+            body.append('csrf_token', CSRF_TOKEN);
+            body.append('os_id', card.dataset.osId);
+            body.append('status', newStatus);
+
+            try {
+                const res = await fetch(getChangeStatusDragUrl(), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: body.toString(),
+                });
+                const data = await res.json();
+                if (!res.ok || !data.ok) {
+                    throw new Error(data.message || 'Falha ao mover a OS.');
+                }
+            } catch (err) {
+                oldZone.appendChild(card);
+                window.alert(err.message || 'Nao foi possivel mover a OS.');
             }
         });
     });

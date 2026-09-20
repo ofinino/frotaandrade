@@ -97,7 +97,7 @@ class AccessController
         if (isset($_POST['assign_role'])) {
             $userId = (int)($_POST['user_id'] ?? 0);
             $roleId = (int)($_POST['role_id'] ?? 0);
-            if ($userId && $roleId) {
+            if ($userId && $roleId && $this->model->usuarioPertenceEmpresa($userId)) {
                 $this->model->atribuirPapel($userId, $roleId);
                 if ($currentUserId === $userId) {
                     $_SESSION['perms'] = load_user_permissions($userId);
@@ -111,7 +111,7 @@ class AccessController
         if (isset($_POST['remove_role'])) {
             $userId = (int)($_POST['user_id'] ?? 0);
             $roleId = (int)($_POST['role_id'] ?? 0);
-            if ($userId && $roleId) {
+            if ($userId && $roleId && $this->model->usuarioPertenceEmpresa($userId)) {
                 $this->model->removerPapelUsuario($userId, $roleId);
                 if ($currentUserId === $userId) {
                     $_SESSION['perms'] = load_user_permissions($userId);
@@ -125,7 +125,7 @@ class AccessController
         if (isset($_POST['assign_branch'])) {
             $userId = (int)($_POST['user_id'] ?? 0);
             $branchId = (int)($_POST['branch_id'] ?? 0);
-            if ($userId && $branchId) {
+            if ($userId && $branchId && $this->model->usuarioPertenceEmpresa($userId) && $this->model->filialPertenceEmpresa($branchId)) {
                 $this->model->atribuirFilial($userId, $branchId);
                 if ($currentUserId === $userId) {
                     $_SESSION['branch_ids'] = load_user_branch_ids($userId, current_company_id());
@@ -139,7 +139,7 @@ class AccessController
         if (isset($_POST['remove_branch'])) {
             $userId = (int)($_POST['user_id'] ?? 0);
             $branchId = (int)($_POST['branch_id'] ?? 0);
-            if ($userId && $branchId) {
+            if ($userId && $branchId && $this->model->usuarioPertenceEmpresa($userId)) {
                 $this->model->removerFilial($userId, $branchId);
                 if ($currentUserId === $userId) {
                     $_SESSION['branch_ids'] = load_user_branch_ids($userId, current_company_id());
@@ -155,7 +155,8 @@ class AccessController
         return [
             ['key' => 'dashboard.view', 'label' => 'Dashboard'],
             ['key' => 'checks.view', 'label' => 'Execucoes'],
-            ['key' => 'templates.view', 'label' => 'Modelos'],
+            ['key' => 'templates.view', 'label' => 'Modelos - Ver'],
+            ['key' => 'templates.manage', 'label' => 'Modelos - Gerenciar'],
             ['key' => 'groups.view', 'label' => 'Grupos'],
             ['key' => 'revision_logs.view', 'label' => 'Revisoes'],
             ['key' => 'vehicles.view', 'label' => 'Veiculos'],

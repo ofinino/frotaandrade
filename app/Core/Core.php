@@ -13,8 +13,35 @@ try {
         ]
     );
 } catch (PDOException $e) {
+    error_log('Erro ao conectar no banco: ' . $e->getMessage());
     http_response_code(500);
-    echo 'Erro ao conectar no banco: ' . htmlspecialchars($e->getMessage());
+    echo <<<HTML
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sem conexão</title>
+<style>
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:#eff1f0; font-family:Arial, Helvetica, sans-serif; color:#1b1f24; }
+  .card { max-width:380px; margin:16px; padding:32px 28px; background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.08); text-align:center; }
+  .icon { font-size:32px; margin-bottom:12px; }
+  h1 { font-size:18px; margin:0 0 8px; }
+  p { font-size:14px; color:#5b6570; line-height:1.5; margin:0 0 20px; }
+  button { border:none; background:#26415b; color:#fff; padding:10px 20px; border-radius:8px; font-size:14px; cursor:pointer; }
+  button:hover { background:#1c3247; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">📶</div>
+    <h1>Não foi possível conectar</h1>
+    <p>Verifique sua conexão com a internet e tente novamente em instantes.</p>
+    <button onclick="location.reload()">Tentar novamente</button>
+  </div>
+</body>
+</html>
+HTML;
     exit;
 }
 
@@ -27,6 +54,61 @@ function db(): PDO
 function sanitize($value): string
 {
     return htmlspecialchars((string)($value ?? ''), ENT_QUOTES, 'UTF-8');
+}
+
+// O "type" enviado pelo navegador nao e confiavel; detecta o mime real pelo
+// conteudo do arquivo. Usado por todo upload que precisa validar tipo/extensao.
+function detect_upload_mime(string $tmpPath): ?string
+{
+    if (!is_uploaded_file($tmpPath)) {
+        return null;
+    }
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    if (!$finfo) {
+        return null;
+    }
+    $mime = finfo_file($finfo, $tmpPath) ?: null;
+    finfo_close($finfo);
+    return $mime;
+}
+
+// Loga o detalhe real da exceção (pode conter nomes de tabela/coluna/query) e
+// exibe ao usuário apenas uma mensagem genérica, evitando vazar detalhes do schema.
+function flash_error(string $userMessage, \Throwable $e, string $key = 'error'): void
+{
+    error_log($userMessage . ' | ' . $e->getMessage());
+    flash($key, $userMessage);
+}
+
+function csrf_token(): string
+{
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function csrf_field(): string
+{
+    return '<input type="hidden" name="csrf_token" value="' . sanitize(csrf_token()) . '">';
+}
+
+function csrf_verify(): bool
+{
+    $sent = $_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+    $expected = $_SESSION['csrf_token'] ?? '';
+    return $sent !== '' && $expected !== '' && hash_equals($expected, $sent);
+}
+
+function require_csrf(): void
+{
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_verify()) {
+        http_response_code(419);
+        flash('error', 'Sessão expirada ou solicitação inválida. Tente novamente.');
+        $back = $_SERVER['HTTP_REFERER'] ?? 'index.php';
+        header('Location: ' . $back);
+        exit;
+    }
 }
 
 function flash(string $key, ?string $message = null): ?string
@@ -148,7 +230,7 @@ function has_permission(string $perm): bool
         'checklist.ver' => 'checks.view',
         'checklist.editar' => 'checks.view',
         'checklist.executar' => 'checks.view',
-        'templates.gerenciar' => 'templates.view',
+        'templates.gerenciar' => 'templates.manage',
         'groups.gerenciar' => 'groups.view',
         'revision_logs.ver' => 'revision_logs.view',
         'veiculos.gerenciar' => 'vehicles.view',
@@ -161,6 +243,7 @@ function has_permission(string $perm): bool
     $reverse = [
         'checks.view' => ['checklist.ver', 'checklist.editar', 'checklist.executar'],
         'templates.view' => ['templates.gerenciar'],
+        'templates.manage' => ['templates.gerenciar'],
         'groups.view' => ['groups.gerenciar'],
         'revision_logs.view' => ['revision_logs.ver'],
         'vehicles.view' => ['veiculos.gerenciar'],
@@ -301,11 +384,21 @@ function ensure_upload_dir(): string
     return $dir;
 }
 
+function detect_base_path(): string
+{
+    $script = $_SERVER['SCRIPT_NAME'] ?? '';
+    $dir = str_replace('\\', '/', dirname($script));
+    return ($dir === '/' || $dir === '.' || $dir === '') ? '' : rtrim($dir, '/');
+}
+
 function asset_url(string $path): string
 {
     global $config;
     $base = rtrim($config['base_url'] ?? '', '/');
+    if ($base === '') {
+        $base = detect_base_path();
+    }
     $cleanPath = ltrim($path, '/');
-    $prefix = $base ? $base . '/' : '/';
+    $prefix = $base !== '' ? $base . '/' : '/';
     return $prefix . $cleanPath;
 }

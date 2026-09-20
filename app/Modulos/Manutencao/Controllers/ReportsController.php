@@ -19,6 +19,12 @@ class ReportsController
 
     public function show(): void
     {
+        if (!has_permission('checks.view')) {
+            http_response_code(403);
+            echo '<p>Sem permissao para ver este relatorio.</p>';
+            return;
+        }
+
         $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
         $run = $this->model->obterExecucao($id);
         if (!$run) {

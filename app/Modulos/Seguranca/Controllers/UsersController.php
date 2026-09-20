@@ -30,8 +30,8 @@ class UsersController
         $branchId = current_branch_id();
         $editingId = isset($_GET['edit']) ? (int) $_GET['edit'] : null;
 
-        if (isset($_GET['delete'])) {
-            $this->deleteUser((int) $_GET['delete'], $current);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
+            $this->deleteUser((int) $_POST['delete'], $current);
             return;
         }
 

@@ -60,6 +60,20 @@ class AccessModel
         $this->db->prepare('DELETE FROM seg_usuario_filiais WHERE user_id = ? AND empresa_id = ? AND filial_id = ?')->execute([$userId, $this->empresaId, $filialId]);
     }
 
+    public function usuarioPertenceEmpresa(int $userId): bool
+    {
+        $stmt = $this->db->prepare('SELECT 1 FROM seg_usuarios WHERE id = ? AND empresa_id = ?');
+        $stmt->execute([$userId, $this->empresaId]);
+        return (bool) $stmt->fetchColumn();
+    }
+
+    public function filialPertenceEmpresa(int $filialId): bool
+    {
+        $stmt = $this->db->prepare('SELECT 1 FROM cad_filiais WHERE id = ? AND empresa_id = ?');
+        $stmt->execute([$filialId, $this->empresaId]);
+        return (bool) $stmt->fetchColumn();
+    }
+
     public function listarUsuarios(): array
     {
         $stmt = $this->db->prepare('SELECT id, name, email FROM seg_usuarios WHERE empresa_id = ? ORDER BY name ASC');

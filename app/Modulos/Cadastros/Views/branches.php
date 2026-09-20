@@ -26,6 +26,7 @@ $currentBranch = $currentBranch ?? null;
     <div class="bg-white border border-slate-100 shadow rounded-lg p-4">
         <div class="font-semibold text-slate-900 mb-2">Nova filial</div>
         <form method="post" class="space-y-3">
+<?= csrf_field() ?>
             <div>
                 <label class="block text-sm text-slate-600 mb-1">Nome</label>
                 <input class="w-full border border-slate-200 rounded px-3 py-2" name="name" required />

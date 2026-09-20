@@ -37,8 +37,8 @@ class GroupsController
             }
         }
 
-        if (isset($_GET['delete'])) {
-            $this->delete((int)$_GET['delete']);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
+            $this->delete((int)$_POST['delete']);
             return;
         }
 
@@ -81,7 +81,7 @@ class GroupsController
                 flash('success', 'Grupo salvo.');
             }
         } catch (\Throwable $e) {
-            flash('error', 'Erro ao salvar grupo: ' . $e->getMessage());
+            flash_error('Erro ao salvar grupo.', $e);
         }
         header('Location: index.php?page=groups');
     }
@@ -92,7 +92,7 @@ class GroupsController
             $deleted = $this->model->excluir($id);
             flash($deleted ? 'success' : 'error', $deleted ? 'Grupo removido.' : 'Não foi possível remover.');
         } catch (\Throwable $e) {
-            flash('error', 'Erro ao remover grupo: ' . $e->getMessage());
+            flash_error('Erro ao remover grupo.', $e);
         }
         header('Location: index.php?page=groups');
     }

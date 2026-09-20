@@ -8,7 +8,9 @@ if (current_user()) {
 }
 
 $error = null;
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_verify()) {
+    $error = 'Sessão expirada. Tente novamente.';
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 
@@ -18,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['password_hash'])) {
+            session_regenerate_id(true);
             $companyId = $user['company_id'] ?? 1;
 
             // Garante módulo checklist habilitado para admins
@@ -86,6 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="bg-emerald-100 border border-emerald-300 text-emerald-900 px-4 py-3 rounded"><?= sanitize($msg) ?></div>
         <?php endif; ?>
         <form method="post" class="space-y-4">
+            <?= csrf_field() ?>
             <div>
                 <label class="block text-sm text-slate-600 mb-1">Email</label>
                 <input type="email" name="email" required class="w-full rounded border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none" />

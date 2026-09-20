@@ -36,8 +36,8 @@ class VehiclesController
             'tipo' => $_GET['tipo'] ?? '',
         ];
 
-        if (isset($_GET['delete'])) {
-            $this->delete((int) $_GET['delete']);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
+            $this->delete((int) $_POST['delete']);
             return;
         }
 
@@ -49,7 +49,7 @@ class VehiclesController
         try {
             $vehicles = $this->model->listar($filters);
         } catch (\Throwable $e) {
-            flash('error', 'Erro ao carregar veiculos: ' . $e->getMessage());
+            flash_error('Erro ao carregar veiculos.', $e);
             $vehicles = [];
         }
         $editVehicle = null;
@@ -124,7 +124,7 @@ class VehiclesController
             $this->model->excluir($id);
             flash('success', 'Veiculo removido.');
         } catch (\Throwable $e) {
-            flash('error', 'Erro ao remover veiculo: ' . $e->getMessage());
+            flash_error('Erro ao remover veiculo.', $e);
         }
         header('Location: index.php?page=vehicles');
         exit;

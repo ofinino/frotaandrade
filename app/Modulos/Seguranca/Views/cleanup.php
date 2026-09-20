@@ -11,6 +11,7 @@ $groups = $groups ?? [];
                 Digite <strong>LIMPAR</strong> para confirmar.
             </p>
             <form method="post" action="index.php?page=cleanup" class="d-flex flex-column gap-3">
+<?= csrf_field() ?>
                 <div class="row g-2">
                     <?php foreach ($groups as $key => $g): ?>
                         <div class="col-md-6">

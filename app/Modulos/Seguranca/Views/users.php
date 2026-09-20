@@ -16,6 +16,7 @@ $current = $current ?? current_user();
             </button>
         </div>
         <form method="post" id="user-form" class="space-y-3">
+<?= csrf_field() ?>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div>
                     <label class="block text-sm text-slate-600 mb-1">Nome</label>
@@ -67,7 +68,11 @@ $current = $current ?? current_user();
                             <?php if (can_manage_role($user['role'])): ?>
                                 <a class="text-amber-600" href="index.php?page=users&edit=<?= $user['id'] ?>">Editar</a>
                                 <?php if ($user['id'] !== $current['id']): ?>
-                                    <a class="text-rose-600" href="index.php?page=users&delete=<?= $user['id'] ?>" onclick="return confirm('Remover usuário?');">Excluir</a>
+                                    <form method="post" class="inline-block" onsubmit="return confirm('Remover usuário?');">
+<?= csrf_field() ?>
+                                        <input type="hidden" name="delete" value="<?= (int) $user['id'] ?>">
+                                        <button type="submit" class="text-rose-600 bg-transparent border-0 p-0 cursor-pointer">Excluir</button>
+                                    </form>
                                 <?php endif; ?>
                             <?php else: ?>
                                 <span class="text-slate-400">Restrito</span>

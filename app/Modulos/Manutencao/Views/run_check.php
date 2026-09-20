@@ -44,6 +44,7 @@ if (!$run) {
     </div>
 
     <form method="post" enctype="multipart/form-data" class="space-y-4" id="run-form">
+<?= csrf_field() ?>
         <input type="hidden" name="action" id="action-field" value="continuar" />
         <input type="hidden" name="signature_executante" id="signature_executante" />
         <?php $fieldIndex = 0; ?>
@@ -165,6 +166,7 @@ if (!$run) {
 <script>
 const requiredObsMsg = 'Para marcacao "Nao Conforme" e obrigatorio informar uma observacao.';
 const READ_ONLY = <?= $readOnly ? 'true' : 'false' ?>;
+const CSRF_TOKEN = <?= json_encode(csrf_token()) ?>;
 let sigPads = {};
 const CLIENT_PHOTO_MAX = { w: 800, h: 800, quality: 0.6 };
 
@@ -351,6 +353,7 @@ function deleteMedia(id) {
     if (!confirm('Remover este anexo?')) return;
     const fd = new FormData();
     fd.append('delete_media_id', id);
+    fd.append('csrf_token', CSRF_TOKEN);
     fetch(window.location.href, {
         method: 'POST',
         body: fd

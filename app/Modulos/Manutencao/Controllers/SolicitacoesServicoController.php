@@ -55,7 +55,7 @@ class SolicitacoesServicoController
             $osList = $this->osModel->listar([]);
             $veiculos = $this->osModel->listarVeiculos();
         } catch (\Throwable $e) {
-            flash('error', 'Erro ao carregar SS: ' . $e->getMessage());
+            flash_error('Erro ao carregar SS.', $e);
             $lista = $osList = $veiculos = [];
         }
 

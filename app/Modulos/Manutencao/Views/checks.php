@@ -125,6 +125,7 @@ $statusColors = [
                 </div>
             </div>
             <form id="form-atribuir" method="post" class="grid grid-cols-1 lg:grid-cols-[1.05fr_1.55fr_1fr_1fr_1fr_1fr] gap-3 items-end">
+<?= csrf_field() ?>
                 <?php if ($editingRun): ?>
                     <input type="hidden" name="edit_id" value="<?= (int) $editingRun['id'] ?>" />
                 <?php endif; ?>
@@ -366,7 +367,11 @@ $statusColors = [
                             <a class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-800 text-sm font-semibold px-3 py-2 rounded text-center" href="index.php?page=report&id=<?= $run['id'] ?>" target="_blank">Relatorio</a>
                             <?php if ($user['role'] !== 'executante' && $statusKey === 'pendente' && empty($run['executado_por'])): ?>
                                 <a class="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm font-semibold px-3 py-2 rounded text-center" href="index.php?page=checks&edit_run=<?= $run['id'] ?>">Editar</a>
-                                <a class="flex-1 bg-rose-100 hover:bg-rose-200 text-rose-700 text-sm font-semibold px-3 py-2 rounded text-center" href="index.php?page=checks&delete_run=<?= $run['id'] ?>" onclick="return confirm('Excluir execução pendente?');">Excluir</a>
+                                <form method="post" class="flex-1" onsubmit="return confirm('Excluir execução pendente?');">
+<?= csrf_field() ?>
+                                    <input type="hidden" name="delete_run" value="<?= (int) $run['id'] ?>">
+                                    <button type="submit" class="w-full bg-rose-100 hover:bg-rose-200 text-rose-700 text-sm font-semibold px-3 py-2 rounded text-center border-0 cursor-pointer">Excluir</button>
+                                </form>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -411,7 +416,11 @@ $statusColors = [
                                 <a class="text-slate-600" href="index.php?page=report&id=<?= $run['id'] ?>" target="_blank">Relatorio</a>
                                 <?php if ($user['role'] !== 'executante' && $statusKey === 'pendente' && empty($run['executado_por'])): ?>
                                     <a class="text-blue-600" href="index.php?page=checks&edit_run=<?= $run['id'] ?>">Editar</a>
-                                    <a class="text-rose-600" href="index.php?page=checks&delete_run=<?= $run['id'] ?>" onclick="return confirm('Excluir execução pendente?');">Excluir</a>
+                                    <form method="post" class="inline-block" onsubmit="return confirm('Excluir execução pendente?');">
+<?= csrf_field() ?>
+                                        <input type="hidden" name="delete_run" value="<?= (int) $run['id'] ?>">
+                                        <button type="submit" class="text-rose-600 bg-transparent border-0 p-0 cursor-pointer">Excluir</button>
+                                    </form>
                                 <?php endif; ?>
                             </td>
                         </tr>

@@ -158,16 +158,23 @@ class ChecklistsController
         // tenta criar tabela de revisão; se falhar, segue fluxo sem logs
         $garantirTabelaRevisao();
 
+        // Mutações (ativar/inativar/excluir/criar/revisar) exigem permissão de gerenciamento,
+        // nao apenas de visualizacao.
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && !has_permission('templates.manage')) {
+            flash('error', 'Sem permissao para gerenciar modelos.');
+            safe_redirect('index.php?page=templates');
+        }
+
         // Ativar/inativar modelo
-        if (isset($_GET['deactivate'])) {
-            $id = (int)$_GET['deactivate'];
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deactivate'])) {
+            $id = (int)$_POST['deactivate'];
             $pdo->prepare('UPDATE man_checklists SET status = ?, updated_at = NOW() WHERE id = ? AND empresa_id = ?')
                 ->execute(['inativo', $id, $companyId]);
             flash('success', 'Modelo inativado. Não aparecerá para novas execuções.');
             safe_redirect('index.php?page=templates');
         }
-        if (isset($_GET['activate'])) {
-            $id = (int)$_GET['activate'];
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['activate'])) {
+            $id = (int)$_POST['activate'];
             $pdo->prepare('UPDATE man_checklists SET status = ?, updated_at = NOW() WHERE id = ? AND empresa_id = ?')
                 ->execute(['ativo', $id, $companyId]);
             flash('success', 'Modelo reativado.');
@@ -175,8 +182,8 @@ class ChecklistsController
         }
 
         // Remover modelo
-        if (isset($_GET['delete'])) {
-            $delId = (int) $_GET['delete'];
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
+            $delId = (int) $_POST['delete'];
             $params = [$delId, $companyId];
             $branchFilter = '';
             if (!is_admin() && $branchId) {
@@ -329,7 +336,7 @@ class ChecklistsController
                 flash('success', 'Modelo criado/revisado com sucesso.');
             } catch (\Throwable $e) {
                 $pdo->rollBack();
-                flash('error', 'Erro ao salvar modelo: ' . $e->getMessage());
+                flash_error('Erro ao salvar modelo.', $e);
             }
             safe_redirect('index.php?page=templates');
         }
@@ -401,7 +408,7 @@ class ChecklistsController
                 }
             }
         } catch (\Throwable $e) {
-            flash('error', 'Erro ao carregar modelos: ' . $e->getMessage());
+            flash_error('Erro ao carregar modelos.', $e);
         }
 
         View::render('Manutencao', 'templates', [
@@ -461,7 +468,7 @@ class ChecklistsController
                 $stmt->execute($params);
                 $logs = $stmt->fetchAll();
             } catch (\Throwable $e) {
-                flash('error', 'Erro ao carregar logs de revisao: ' . $e->getMessage());
+                flash_error('Erro ao carregar logs de revisao.', $e);
             }
         }
 

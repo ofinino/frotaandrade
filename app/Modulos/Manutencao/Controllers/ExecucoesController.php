@@ -28,13 +28,13 @@ class ExecucoesController
         }
 
         // excluir execucao pendente
-        if (isset($_GET['delete_run'])) {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_run'])) {
             if (!has_permission('checks.view')) {
                 flash('error', 'Sem permissao para excluir execucao.');
                 header('Location: index.php?page=checks');
                 return;
             }
-            $deleted = $this->execModel->excluirExecucaoPendente((int) $_GET['delete_run']);
+            $deleted = $this->execModel->excluirExecucaoPendente((int) $_POST['delete_run']);
             flash($deleted > 0 ? 'success' : 'error', $deleted > 0 ? 'Execucao excluida.' : 'Nao foi possivel excluir. Verifique se ja foi iniciada.');
             header('Location: index.php?page=checks');
             return;
@@ -83,12 +83,12 @@ class ExecucoesController
 
             $tplInfo = $this->execModel->obterChecklistInfo($templateId);
             if (!$tplInfo) {
-                flash('error', 'Modelo n????o encontrado ou sem acesso.');
+                flash('error', 'Modelo não encontrado ou sem acesso.');
                 header('Location: index.php?page=checks');
                 return;
             }
             if (!$editId && isset($tplInfo['status']) && $tplInfo['status'] === 'inativo') {
-                flash('error', 'Modelo inativo n????o pode ser usado em novas execu????????es.');
+                flash('error', 'Modelo inativo não pode ser usado em novas execuções.');
                 header('Location: index.php?page=checks');
                 return;
             }
@@ -176,7 +176,7 @@ class ExecucoesController
             $executantes = $this->execModel->listarExecutantes();
             $groups = $this->execModel->listarGrupos();
         } catch (\Throwable $e) {
-            flash('error', 'Erro ao carregar execucoes: ' . $e->getMessage());
+            flash_error('Erro ao carregar execucoes.', $e);
             $runs = $templates = $vehicles = $executantes = $groups = [];
         }
 
@@ -246,7 +246,7 @@ class ExecucoesController
             try {
                 $this->salvarExecucao($run);
             } catch (\Throwable $e) {
-                flash('error', 'Erro ao salvar: ' . $e->getMessage());
+                flash_error('Erro ao salvar.', $e);
                 header('Location: index.php?page=run_check&id=' . $runId);
             }
             return;
@@ -286,6 +286,12 @@ class ExecucoesController
         $user = current_user();
         $allowedPhoto = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
         $allowedVideo = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska'];
+        $videoExtByMime = [
+            'video/mp4' => 'mp4',
+            'video/quicktime' => 'mov',
+            'video/x-msvideo' => 'avi',
+            'video/x-matroska' => 'mkv',
+        ];
         // Limite de fotos por campo
         $maxPhotoPerField = 4;
         $maxUploadBytes = (int) (1.5 * 1024 * 1024); // alvo ~1.5MB por arquivo apos compressao
@@ -383,13 +389,15 @@ class ExecucoesController
                 $processedPhotos = 0;
 
                 foreach ($files as $file) {
-                    $mime = $file['type'];
                     $original = $file['name'];
                     $tmp = $file['tmp'];
+
+                    $realMime = detect_upload_mime($tmp);
+
                     $mediaType = null;
-                    if (in_array($mime, $allowedPhoto, true) || strpos($mime, 'image/') === 0) {
+                    if ($realMime && in_array($realMime, $allowedPhoto, true)) {
                         $mediaType = 'photo';
-                    } elseif (in_array($mime, $allowedVideo, true) || strpos($mime, 'video/') === 0) {
+                    } elseif ($realMime && in_array($realMime, $allowedVideo, true)) {
                         $mediaType = 'video';
                     } else {
                         continue;
@@ -418,9 +426,9 @@ class ExecucoesController
                             $skippedSize++;
                             continue;
                         }
-                        $ext = strtolower(pathinfo($original, PATHINFO_EXTENSION));
-                        $safeExt = preg_replace('/[^a-z0-9]+/', '', $ext);
-                        $filename = uniqid($mediaType . '_', true) . ($safeExt ? '.' . $safeExt : '');
+                        // Extensao definida pelo mime real detectado no servidor, nunca pelo nome enviado pelo cliente.
+                        $safeExt = $videoExtByMime[$realMime] ?? 'bin';
+                        $filename = uniqid($mediaType . '_', true) . '.' . $safeExt;
                         $targetPath = rtrim($uploadDir, '/\\') . DIRECTORY_SEPARATOR . $filename;
                         $moved = $this->moveUploadedFile($tmp, $targetPath);
                         if ($moved) {
@@ -579,7 +587,7 @@ class ExecucoesController
     private function applyExifOrientation($src, string $filePath, int &$w, int &$h)
     {
         $orientation = null;
-        // Tenta EXIF se dispon????vel
+        // Tenta EXIF se disponível
         if (function_exists('exif_read_data')) {
             $exif = @exif_read_data($filePath);
             if ($exif && !empty($exif['Orientation'])) {

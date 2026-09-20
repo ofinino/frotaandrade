@@ -53,23 +53,27 @@ class AnexosModel
 
     public function salvar(string $ownerType, int $ownerId, array $files, int $userId): array
     {
-        $permitidos = ['image/jpeg','image/png','image/webp','image/gif'];
-        $maxBytes = 5 * 1024 * 1024;
+        $permitidos = ['image/jpeg','image/png','image/webp','image/gif','application/pdf'];
+        $extPorMime = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif', 'application/pdf' => 'pdf'];
+        $maxBytes = 20 * 1024 * 1024;
         $normalizados = $this->normalizarArquivos($files);
         $salvos = [];
-        $subdir = $ownerType === 'ss' ? 'uploads/ss' : 'uploads/os';
+        $subdir = match ($ownerType) {
+            'ss' => 'ss',
+            'abastecimento' => 'abastecimento',
+            default => 'os',
+        };
         $dir = $this->garantirDiretorio($subdir);
 
         foreach ($normalizados as $file) {
             if ($file['size'] > $maxBytes) {
                 continue;
             }
-            $mime = $file['type'];
-            if (!in_array($mime, $permitidos, true)) {
+            $mime = detect_upload_mime($file['tmp']);
+            if (!$mime || !in_array($mime, $permitidos, true)) {
                 continue;
             }
-            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            $safeExt = preg_replace('/[^a-z0-9]+/', '', $ext) ?: 'jpg';
+            $safeExt = $extPorMime[$mime];
             $filename = uniqid($ownerType . '_', true) . '.' . $safeExt;
             $dest = $dir . DIRECTORY_SEPARATOR . $filename;
             $moved = @move_uploaded_file($file['tmp'], $dest);
@@ -80,7 +84,7 @@ class AnexosModel
                 }
             }
             if ($moved) {
-                $relative = $subdir . '/' . $filename;
+                $relative = 'uploads/' . $subdir . '/' . $filename;
                 $this->db->prepare(
                     'INSERT INTO man_attachments (empresa_id, filial_id, owner_type, owner_id, file_path, original_name, mime_type, size, uploaded_by, uploaded_at)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'

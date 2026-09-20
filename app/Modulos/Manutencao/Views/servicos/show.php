@@ -26,11 +26,13 @@ $osList = $osList ?? [];
         <div class="card-header">Acoes</div>
         <div class="card-body d-flex gap-2 flex-wrap">
             <form method="post" action="index.php?page=servicos">
+<?= csrf_field() ?>
                 <input type="hidden" name="convert_ss" value="<?= sanitize($ss['id']) ?>">
                 <input class="form-control mb-2" name="obs_os" placeholder="Obs OS (opcional)">
                 <button class="btn btn-primary">Converter em OS</button>
             </form>
             <form method="post" action="index.php?page=servicos">
+<?= csrf_field() ?>
                 <input type="hidden" name="link_ss" value="1">
                 <input type="hidden" name="ss_id" value="<?= sanitize($ss['id']) ?>">
                 <select class="form-select mb-2" name="os_id">
@@ -58,6 +60,7 @@ $osList = $osList ?? [];
             </div>
             <?php if (has_permission('ss.manage')): ?>
                 <form class="mt-3" method="post" action="index.php?page=servicos&action=show&id=<?= sanitize($ss['id']) ?>" enctype="multipart/form-data">
+<?= csrf_field() ?>
                     <label class="form-label">Adicionar anexos</label>
                     <input class="form-control mb-2" type="file" name="anexos[]" multiple accept="image/*">
                     <button class="btn btn-outline-primary">Enviar</button>

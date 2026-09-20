@@ -15,7 +15,7 @@ class BranchesController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $name = trim($_POST['name'] ?? '');
             if ($name === '') {
-                flash('error', 'Nome da filial obrigatÛrio.');
+                flash('error', 'Nome da filial obrigat√≥rio.');
                 header('Location: index.php?page=branches');
                 return;
             }
@@ -39,7 +39,7 @@ class BranchesController
                 set_current_branch($branchId);
                 flash('success', 'Filial selecionada.');
             } else {
-                flash('error', 'Filial n„o encontrada ou sem acesso.');
+                flash('error', 'Filial n√£o encontrada ou sem acesso.');
             }
             header('Location: index.php?page=branches');
             return;

@@ -4,6 +4,7 @@ $company = $company ?? [];
 <div class="max-w-3xl bg-white border border-slate-100 shadow rounded-lg p-4 space-y-3">
     <div class="font-semibold text-slate-900">Empresa / Marca</div>
     <form method="post" class="space-y-3">
+<?= csrf_field() ?>
         <div>
             <label class="block text-sm text-slate-600 mb-1">Nome interno</label>
             <input class="w-full border border-slate-200 rounded px-3 py-2" name="name" value="<?= sanitize($company['name'] ?? '') ?>" />

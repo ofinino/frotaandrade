@@ -7,7 +7,9 @@ $error = null;
 $success = null;
 $user = current_user();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_verify()) {
+    $error = 'Sessão expirada. Tente novamente.';
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $current = $_POST['current_password'] ?? '';
     $new = $_POST['new_password'] ?? '';
     $confirm = $_POST['confirm_password'] ?? '';
@@ -51,6 +53,7 @@ render_header('Alterar senha');
         <?php endif; ?>
 
         <form method="post" class="space-y-4">
+            <?= csrf_field() ?>
             <div>
                 <label class="block text-sm text-slate-600 mb-1">Senha atual</label>
                 <input type="password" name="current_password" required class="w-full h-10 border border-slate-200 rounded px-3" />

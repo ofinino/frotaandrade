@@ -35,7 +35,7 @@ class PeopleModel
 
     public function listar(): array
     {
-        $sql = 'SELECT id, nome_completo, nome_abreviado, email_func, telefone_func, cpf, rg, sexo, funcao_id, created_at 
+        $sql = 'SELECT id, nome_completo, nome_abreviado, email_func, telefone_func, cpf, rg, sexo, funcao_id, data_nascimento, created_at
                 FROM cad_pessoas WHERE empresa_id = ?';
         $params = [$this->empresaId];
         [$filialSql, $filialParams] = $this->filialWhere();

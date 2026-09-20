@@ -21,6 +21,7 @@ $tipos = [
             </button>
         </div>
         <form method="post" id="group-form" class="grid grid-cols-1 lg:grid-cols-4 gap-3 items-end">
+<?= csrf_field() ?>
             <div class="lg:col-span-2">
                 <label class="block text-sm text-slate-600 mb-1">Nome do grupo</label>
                 <input class="w-full h-10 border border-slate-200 rounded px-3" name="nome" required value="<?= isset($editingGroup['nome']) ? sanitize($editingGroup['nome']) : '' ?>" />
@@ -65,7 +66,11 @@ $tipos = [
                                 <td class="py-2 text-slate-600"><?= $g['filial_id'] ? 'Filial ' . (int)$g['filial_id'] : '-' ?></td>
                                 <td class="py-2 text-right">
                                 <a class="text-blue-600 mr-2" href="index.php?page=groups&edit=<?= $g['id'] ?>">Editar</a>
-                                <a class="text-rose-600" href="index.php?page=groups&delete=<?= $g['id'] ?>" onclick="return confirm('Excluir grupo? Modelos associados serão afetados.');">Excluir</a>
+                                <form method="post" class="inline-block" onsubmit="return confirm('Excluir grupo? Modelos associados serão afetados.');">
+<?= csrf_field() ?>
+                                    <input type="hidden" name="delete" value="<?= (int) $g['id'] ?>">
+                                    <button type="submit" class="text-rose-600 bg-transparent border-0 p-0 cursor-pointer">Excluir</button>
+                                </form>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
