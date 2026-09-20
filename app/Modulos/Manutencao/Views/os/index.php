@@ -26,21 +26,26 @@ $kanbanColumns = [
     'aguardando_agendamento' => 'Aguardando/Agendado',
     'em_execucao' => 'Em Execução',
     'analise_aprovacao' => 'Análise e Aprovação',
+    'encerrada' => 'Encerrada',
+    'cancelada' => 'Cancelada',
 ];
+$kanbanDraggable = ['solicitacao', 'aguardando_agendamento', 'em_execucao', 'analise_aprovacao'];
 $kanbanHeaderColors = [
     'solicitacao' => ['bg' => '#1e293b', 'fg' => '#ffffff', 'wash' => '#f8fafc'],
     'aguardando_agendamento' => ['bg' => '#7c3aed', 'fg' => '#ffffff', 'wash' => '#f5f3ff'],
     'em_execucao' => ['bg' => '#16a34a', 'fg' => '#ffffff', 'wash' => '#f0fdf4'],
     'analise_aprovacao' => ['bg' => '#ea580c', 'fg' => '#ffffff', 'wash' => '#fff7ed'],
+    'encerrada' => ['bg' => '#059669', 'fg' => '#ffffff', 'wash' => '#ecfdf5'],
+    'cancelada' => ['bg' => '#6b7280', 'fg' => '#ffffff', 'wash' => '#f9fafb'],
 ];
-$kanbanCardsByStatus = ['solicitacao' => [], 'aguardando_agendamento' => [], 'em_execucao' => [], 'analise_aprovacao' => []];
-$kanbanConcluidas = [];
+$kanbanCardsByStatus = [
+    'solicitacao' => [], 'aguardando_agendamento' => [], 'em_execucao' => [],
+    'analise_aprovacao' => [], 'encerrada' => [], 'cancelada' => [],
+];
 foreach ($orders as $osRow) {
     $st = $osRow['status'] ?? 'solicitacao';
     if (isset($kanbanCardsByStatus[$st])) {
         $kanbanCardsByStatus[$st][] = $osRow;
-    } elseif (in_array($st, ['encerrada', 'cancelada'], true)) {
-        $kanbanConcluidas[] = $osRow;
     }
 }
 
@@ -712,21 +717,17 @@ html.os-agenda-lock .os-page-wrap {
     </div>
 
     <div id="os-kanban-view" class="space-y-3" style="display:none;">
-        <div class="d-flex align-items-center gap-2 mb-2">
-            <button type="button" class="os-pill active" data-kanban-tab="ativas">Em andamento</button>
-            <button type="button" class="os-pill" data-kanban-tab="concluidas">Concluídas</button>
-        </div>
-
-        <div data-kanban-panel="ativas" style="display:grid; gap:12px; grid-template-columns: repeat(4, minmax(260px, 1fr));">
+        <div style="display:grid; gap:12px; grid-template-columns: repeat(6, minmax(230px, 1fr));">
             <?php foreach ($kanbanColumns as $statusKey => $label): ?>
                 <?php $cards = $kanbanCardsByStatus[$statusKey] ?? []; ?>
                 <?php $hc = $kanbanHeaderColors[$statusKey] ?? ['bg' => '#1e293b', 'fg' => '#ffffff', 'wash' => '#f8fafc']; ?>
+                <?php $arrastavel = in_array($statusKey, $kanbanDraggable, true); ?>
                 <section class="os-column" style="min-height:200px; background:<?= sanitize($hc['wash']) ?>; --os-status-color: <?= sanitize($hc['bg']) ?>;">
                     <div class="os-column-header" style="background:transparent; border-bottom-color:rgba(15,23,42,.08);">
                         <span class="os-column-title" style="display:inline-flex; align-items:center; padding:4px 12px; border-radius:8px; background:<?= sanitize($hc['bg']) ?>; color:<?= sanitize($hc['fg']) ?>; font-weight:700; font-size:0.85rem;"><?= sanitize($label) ?></span>
                         <div class="os-column-count"><?= count($cards) ?></div>
                     </div>
-                    <div class="os-dropzone" data-kanban-dropzone="<?= sanitize($statusKey) ?>" style="min-height:150px; background:transparent;">
+                    <div class="os-dropzone" <?= $arrastavel ? 'data-kanban-dropzone="' . sanitize($statusKey) . '"' : '' ?> style="min-height:150px; background:transparent;">
                         <?php if (!$cards): ?>
                             <div class="os-empty">Sem OS nesta coluna.</div>
                         <?php endif; ?>
@@ -738,7 +739,7 @@ html.os-agenda-lock .os-page-wrap {
                                     $diasAberta = 'Há ' . $diff->days . ' dias';
                                 }
                             ?>
-                            <article class="os-card" draggable="true" data-os-id="<?= sanitize($kOs['id']) ?>" data-status="<?= sanitize($statusKey) ?>">
+                            <article class="os-card" <?= $arrastavel ? 'draggable="true"' : '' ?> data-os-id="<?= sanitize($kOs['id']) ?>" data-status="<?= sanitize($statusKey) ?>">
                                 <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
                                     <div class="os-card-code"><?= sanitize($kOs['codigo']) ?></div>
                                 </div>
@@ -753,30 +754,6 @@ html.os-agenda-lock .os-page-wrap {
                     </div>
                 </section>
             <?php endforeach; ?>
-        </div>
-
-        <div data-kanban-panel="concluidas" class="os-column" style="display:none;">
-            <div class="os-column-header">
-                <div class="os-column-title">Concluídas</div>
-                <div class="os-column-count"><?= count($kanbanConcluidas) ?></div>
-            </div>
-            <div class="os-dropzone">
-                <?php if (!$kanbanConcluidas): ?>
-                    <div class="os-empty">Sem OS concluídas.</div>
-                <?php endif; ?>
-                <?php foreach ($kanbanConcluidas as $kOs): ?>
-                    <article class="os-card" data-os-id="<?= sanitize($kOs['id']) ?>">
-                        <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
-                            <div class="os-card-code"><?= sanitize($kOs['codigo']) ?></div>
-                            <span class="os-chip <?= $statusColors[$kOs['status']] ?? '' ?>"><?= sanitize($statusLabels[$kOs['status']] ?? $kOs['status']) ?></span>
-                        </div>
-                        <div class="os-card-meta mb-1"><?= sanitize($kOs['vehicle_plate'] ?? '-') ?></div>
-                        <div class="os-card-actions">
-                            <a class="btn btn-sm btn-outline-primary os-open-btn" href="index.php?mod=manutencao&ctrl=OrdensServico&action=show&id=<?= sanitize($kOs['id']) ?>">Abrir OS</a>
-                        </div>
-                    </article>
-                <?php endforeach; ?>
-            </div>
         </div>
     </div>
 
@@ -1516,15 +1493,6 @@ const CSRF_TOKEN = <?= json_encode(csrf_token()) ?>;
                 const msg = (err && err.message) ? err.message : 'Nao foi possivel salvar o planejamento da OS.';
                 window.alert(msg);
             }
-        });
-    });
-
-    document.querySelectorAll('[data-kanban-tab]').forEach((btn) => {
-        btn.addEventListener('click', function() {
-            const tab = this.dataset.kanbanTab;
-            document.querySelectorAll('[data-kanban-tab]').forEach((b) => b.classList.toggle('active', b === this));
-            document.querySelector('[data-kanban-panel="ativas"]').style.display = tab === 'ativas' ? '' : 'none';
-            document.querySelector('[data-kanban-panel="concluidas"]').style.display = tab === 'concluidas' ? '' : 'none';
         });
     });
 
