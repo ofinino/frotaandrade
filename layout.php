@@ -30,6 +30,10 @@ function render_header(string $title = 'Painel'): void
                 $navItems[] = ['page' => 'planos_preventiva', 'label' => 'Planos Preventiva', 'href' => 'index.php?page=planos_preventiva', 'perm' => true, 'icon' => 'history'];
                 $navItems[] = ['page' => 'vencimentos_preventiva', 'label' => 'Lembretes', 'href' => 'index.php?page=vencimentos_preventiva', 'perm' => true, 'icon' => 'flag'];
             }
+            if ((is_admin() || has_permission('combustivel.view'))) {
+                $navItems[] = ['page' => 'abastecimentos', 'label' => 'Abastecimentos', 'href' => 'index.php?page=abastecimentos', 'perm' => true, 'icon' => 'list'];
+                $navItems[] = ['page' => 'meus_tanques', 'label' => 'Meus tanques', 'href' => 'index.php?page=meus_tanques', 'perm' => true, 'icon' => 'truck'];
+            }
             if (has_permission('templates.view')) {
                 $navItems[] = ['page' => 'templates', 'label' => 'Modelos', 'href' => 'index.php?page=templates', 'perm' => true, 'icon' => 'template'];
                 $navItems[] = ['page' => 'revision_logs', 'label' => 'RevisÃƒÂµes', 'href' => 'index.php?page=revision_logs', 'perm' => true, 'icon' => 'history'];
@@ -491,6 +495,15 @@ function render_header(string $title = 'Painel'): void
                             ['page' => 'os', 'label' => 'Ordens de Servico', 'icon' => 'folder'],
                             ['page' => 'planos_preventiva', 'label' => 'Planos Preventiva', 'icon' => 'history'],
                             ['page' => 'vencimentos_preventiva', 'label' => 'Lembretes', 'icon' => 'flag'],
+                        ],
+                    ],
+                    [
+                        'id' => 'combustivel',
+                        'label' => 'Combustivel',
+                        'icon' => 'truck',
+                        'items' => [
+                            ['page' => 'abastecimentos', 'label' => 'Abastecimentos', 'icon' => 'list'],
+                            ['page' => 'meus_tanques', 'label' => 'Meus tanques', 'icon' => 'truck'],
                         ],
                     ],
                     [
