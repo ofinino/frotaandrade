@@ -58,7 +58,11 @@ class AnexosModel
         $maxBytes = 20 * 1024 * 1024;
         $normalizados = $this->normalizarArquivos($files);
         $salvos = [];
-        $subdir = $ownerType === 'ss' ? 'ss' : 'os';
+        $subdir = match ($ownerType) {
+            'ss' => 'ss',
+            'abastecimento' => 'abastecimento',
+            default => 'os',
+        };
         $dir = $this->garantirDiretorio($subdir);
 
         foreach ($normalizados as $file) {
