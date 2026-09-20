@@ -15,7 +15,33 @@ try {
 } catch (PDOException $e) {
     error_log('Erro ao conectar no banco: ' . $e->getMessage());
     http_response_code(500);
-    echo 'Erro ao conectar no banco. Tente novamente mais tarde.';
+    echo <<<HTML
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sem conexão</title>
+<style>
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:#eff1f0; font-family:Arial, Helvetica, sans-serif; color:#1b1f24; }
+  .card { max-width:380px; margin:16px; padding:32px 28px; background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.08); text-align:center; }
+  .icon { font-size:32px; margin-bottom:12px; }
+  h1 { font-size:18px; margin:0 0 8px; }
+  p { font-size:14px; color:#5b6570; line-height:1.5; margin:0 0 20px; }
+  button { border:none; background:#26415b; color:#fff; padding:10px 20px; border-radius:8px; font-size:14px; cursor:pointer; }
+  button:hover { background:#1c3247; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">📶</div>
+    <h1>Não foi possível conectar</h1>
+    <p>Verifique sua conexão com a internet e tente novamente em instantes.</p>
+    <button onclick="location.reload()">Tentar novamente</button>
+  </div>
+</body>
+</html>
+HTML;
     exit;
 }
 
