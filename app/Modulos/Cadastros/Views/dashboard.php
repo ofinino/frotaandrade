@@ -21,11 +21,11 @@ $statusLabels = [
     'pausado' => 'Pausados',
     'concluido' => 'Concluídos',
 ];
-$statusColors = [
-    'pendente' => 'bg-amber-50 border-amber-200 text-amber-700',
-    'em_andamento' => 'bg-sky-50 border-sky-200 text-sky-700',
-    'pausado' => 'bg-slate-50 border-slate-200 text-slate-700',
-    'concluido' => 'bg-emerald-50 border-emerald-200 text-emerald-700',
+$statusAccent = [
+    'pendente' => '#d97706',
+    'em_andamento' => '#0284c7',
+    'pausado' => '#64748b',
+    'concluido' => '#16a34a',
 ];
 
 $osStatusLabels = [
@@ -36,13 +36,13 @@ $osStatusLabels = [
     'encerrada' => 'Encerrada',
     'cancelada' => 'Cancelada',
 ];
-$osStatusColors = [
-    'solicitacao' => ['bg' => '#1e293b', 'wash' => '#f8fafc'],
-    'aguardando_agendamento' => ['bg' => '#7c3aed', 'wash' => '#f5f3ff'],
-    'em_execucao' => ['bg' => '#16a34a', 'wash' => '#f0fdf4'],
-    'analise_aprovacao' => ['bg' => '#ea580c', 'wash' => '#fff7ed'],
-    'encerrada' => ['bg' => '#059669', 'wash' => '#ecfdf5'],
-    'cancelada' => ['bg' => '#6b7280', 'wash' => '#f9fafb'],
+$osStatusAccent = [
+    'solicitacao' => '#1e293b',
+    'aguardando_agendamento' => '#7c3aed',
+    'em_execucao' => '#16a34a',
+    'analise_aprovacao' => '#ea580c',
+    'encerrada' => '#059669',
+    'cancelada' => '#6b7280',
 ];
 
 // Prepara série de combustível para gráfico simples
@@ -54,6 +54,22 @@ $maxSerieFuel = max($maxSerieFuel, 1.0);
 
 $fmtMoeda = static fn(float $v): string => 'R$ ' . number_format($v, 2, ',', '.');
 $fmtLitros = static fn(float $v): string => number_format($v, 1, ',', '.') . ' L';
+
+/**
+ * Card de estatística padrão do painel: mesmo tamanho/tipografia em toda a
+ * página, só o traço lateral muda de cor conforme o status/contexto.
+ */
+$statCard = static function (string $label, string $value, ?string $accent = null, ?string $caption = null): string {
+    $borderStyle = $accent ? "border-left:4px solid {$accent};" : '';
+    $html = '<div class="os-card-surface h-full flex flex-col justify-between p-4" style="' . $borderStyle . '">';
+    $html .= '<div class="text-sm text-slate-500">' . sanitize($label) . '</div>';
+    $html .= '<div class="text-2xl font-semibold text-slate-900 os-mono mt-1">' . $value . '</div>';
+    if ($caption !== null) {
+        $html .= '<div class="text-xs text-slate-500 mt-1">' . sanitize($caption) . '</div>';
+    }
+    $html .= '</div>';
+    return $html;
+};
 ?>
 
 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -69,57 +85,37 @@ $fmtLitros = static fn(float $v): string => number_format($v, 1, ',', '.') . ' L
 </div>
 
 <!-- Cadastros: cards principais -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6 items-stretch">
     <?php foreach ($tables as $table => $label): ?>
-        <div class="os-card-surface p-4">
-            <div class="text-sm text-slate-500"><?= sanitize($label) ?></div>
-            <div class="text-3xl font-semibold text-slate-900 os-mono"><?= (int)($counts[$table] ?? 0) ?></div>
-        </div>
+        <?= $statCard($label, (string)(int)($counts[$table] ?? 0)) ?>
     <?php endforeach; ?>
 </div>
 
 <!-- Checklists -->
 <div class="os-section-title text-slate-900 mb-3">Checklists no período</div>
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 items-stretch">
     <?php foreach ($statusLabels as $key => $label): ?>
-        <div class="rounded-lg border p-4 <?= $statusColors[$key] ?? 'bg-white border-slate-200 text-slate-800' ?>">
-            <div class="text-sm"><?= $label ?></div>
-            <div class="text-2xl font-semibold os-mono"><?= (int)($statusCounts[$key] ?? 0) ?></div>
-        </div>
+        <?= $statCard($label, (string)(int)($statusCounts[$key] ?? 0), $statusAccent[$key] ?? null) ?>
     <?php endforeach; ?>
 </div>
 
 <!-- Ordens de serviço -->
 <div class="os-section-title text-slate-900 mb-3">Ordens de serviço (estado atual)</div>
-<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 items-stretch">
     <?php foreach ($osStatusLabels as $key => $label): ?>
-        <?php $cor = $osStatusColors[$key] ?? ['bg' => '#334155', 'wash' => '#f8fafc']; ?>
-        <div class="rounded-lg p-4 border" style="background: <?= $cor['wash'] ?>; border-color: <?= $cor['bg'] ?>33;">
-            <div class="text-xs font-medium" style="color: <?= $cor['bg'] ?>;"><?= sanitize($label) ?></div>
-            <div class="text-2xl font-semibold os-mono text-slate-900"><?= (int)($osStatusCounts[$key] ?? 0) ?></div>
-        </div>
+        <?= $statCard($label, (string)(int)($osStatusCounts[$key] ?? 0), $osStatusAccent[$key] ?? null) ?>
     <?php endforeach; ?>
 </div>
 
 <!-- Combustível -->
 <div class="os-section-title text-slate-900 mb-3">Combustível no período</div>
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-    <div class="os-card-surface p-4">
-        <div class="text-sm text-slate-500">Total gasto</div>
-        <div class="text-2xl font-semibold text-slate-900 os-mono"><?= $fmtMoeda($fuelSummary['custo_total']) ?></div>
-        <div class="text-xs text-slate-500 mt-1"><?= (int)$fuelSummary['total_abastecimentos'] ?> abastecimento(s)</div>
-    </div>
-    <div class="os-card-surface p-4">
-        <div class="text-sm text-slate-500">Litros abastecidos</div>
-        <div class="text-2xl font-semibold text-slate-900 os-mono"><?= $fmtLitros($fuelSummary['quantidade_total']) ?></div>
-    </div>
-    <div class="os-card-surface p-4">
-        <div class="text-sm text-slate-500">Preço médio por litro</div>
-        <div class="text-2xl font-semibold text-slate-900 os-mono"><?= $fmtMoeda($fuelSummary['preco_medio']) ?></div>
-    </div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 items-stretch">
+    <?= $statCard('Total gasto', $fmtMoeda($fuelSummary['custo_total']), null, $fuelSummary['total_abastecimentos'] . ' abastecimento(s)') ?>
+    <?= $statCard('Litros abastecidos', $fmtLitros($fuelSummary['quantidade_total'])) ?>
+    <?= $statCard('Preço médio por litro', $fmtMoeda($fuelSummary['preco_medio'])) ?>
 </div>
 
-<div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-6">
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-6 items-stretch">
     <!-- Gasto por dia -->
     <div class="os-card-surface p-4 xl:col-span-2">
         <div class="flex items-center justify-between mb-3">
