@@ -77,6 +77,20 @@ $combustivelQueryBase = function (array $filters, array $extra = []): string {
             <a href="<?= sanitize($combustivelQueryBase($filters, ['aba' => 'todos'])) ?>" class="px-4 py-2 font-semibold <?= empty($filters['apenas_inconsistentes']) ? 'bg-slate-900 text-white' : 'bg-white text-slate-700' ?>">Todos</a>
             <a href="<?= sanitize($combustivelQueryBase($filters, ['aba' => 'inconsistentes'])) ?>" class="px-4 py-2 font-semibold <?= !empty($filters['apenas_inconsistentes']) ? 'bg-slate-900 text-white' : 'bg-white text-slate-700' ?>">Inconsistentes (<?= (int)$resumo['total_inconsistentes'] ?>)</a>
         </div>
+
+        <div class="relative">
+            <button type="button" id="colunas-btn" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                Colunas <span id="colunas-count" class="inline-flex items-center justify-center rounded-full bg-slate-100 text-slate-600 text-xs w-5 h-5"></span>
+            </button>
+            <div id="colunas-panel" class="hidden absolute right-0 z-20 mt-2 w-64 rounded-lg border border-slate-200 bg-white shadow-lg p-3 space-y-1">
+                <?php foreach (['criado_por' => 'Criado por', 'valor_litro' => 'Valor do litro', 'custo' => 'Custo total', 'medida_percorrida' => 'Medida percorrida', 'anexo' => 'Anexo'] as $colKey => $colLabel): ?>
+                    <label class="flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-slate-50 text-sm text-slate-700 cursor-pointer">
+                        <span><?= sanitize($colLabel) ?></span>
+                        <input type="checkbox" class="colunas-toggle rounded border-slate-300" data-col="<?= sanitize($colKey) ?>" checked>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </div>
     </form>
 
     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-x-auto">
@@ -88,11 +102,13 @@ $combustivelQueryBase = function (array $filters, array $extra = []): string {
                     <th class="px-3 py-3 font-medium whitespace-nowrap">Medição</th>
                     <th class="px-3 py-3 font-medium whitespace-nowrap">Tipo</th>
                     <th class="px-3 py-3 font-medium whitespace-nowrap">Fornecedor/Tanque</th>
-                    <th class="px-3 py-3 font-medium whitespace-nowrap">Medida percorrida</th>
+                    <th data-col="criado_por" class="px-3 py-3 font-medium whitespace-nowrap">Criado por</th>
+                    <th data-col="medida_percorrida" class="px-3 py-3 font-medium whitespace-nowrap">Medida percorrida</th>
                     <th class="px-3 py-3 font-medium whitespace-nowrap">Quantidade</th>
                     <th class="px-3 py-3 font-medium whitespace-nowrap">Autonomia média</th>
-                    <th class="px-3 py-3 font-medium whitespace-nowrap">Custo</th>
-                    <th class="px-3 py-3 font-medium whitespace-nowrap">Anexo</th>
+                    <th data-col="valor_litro" class="px-3 py-3 font-medium whitespace-nowrap">Valor do litro</th>
+                    <th data-col="custo" class="px-3 py-3 font-medium whitespace-nowrap">Custo total</th>
+                    <th data-col="anexo" class="px-3 py-3 font-medium whitespace-nowrap">Anexo</th>
                     <th class="px-3 py-3 font-medium whitespace-nowrap"></th>
                 </tr>
             </thead>
@@ -108,7 +124,8 @@ $combustivelQueryBase = function (array $filters, array $extra = []): string {
                         <td class="px-3 py-3 whitespace-nowrap"><?= number_format((float)$r['odometro'], 1, ',', '.') ?> km</td>
                         <td class="px-3 py-3 whitespace-nowrap"><span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold <?= $chip['bg'] ?> <?= $chip['text'] ?>"><?= sanitize($r['combustivel_nome'] ?? '-') ?></span></td>
                         <td class="px-3 py-3 whitespace-nowrap"><?= sanitize($r['tipo'] === 'interno' ? ($r['tank_nome'] ?? '-') : ($r['fornecedor_nome'] ?? '-')) ?></td>
-                        <td class="px-3 py-3 whitespace-nowrap"><?= $r['medida_percorrida'] !== null ? number_format((float)$r['medida_percorrida'], 1, ',', '.') . ' km' : '-,-- km' ?></td>
+                        <td data-col="criado_por" class="px-3 py-3 whitespace-nowrap"><?= sanitize($r['criado_por_nome'] ?? '-') ?></td>
+                        <td data-col="medida_percorrida" class="px-3 py-3 whitespace-nowrap"><?= $r['medida_percorrida'] !== null ? number_format((float)$r['medida_percorrida'], 1, ',', '.') . ' km' : '-,-- km' ?></td>
                         <td class="px-3 py-3 whitespace-nowrap"><?= number_format((float)$r['quantidade'], 2, ',', '.') ?> L</td>
                         <td class="px-3 py-3 whitespace-nowrap">
                             <?php if ($r['inconsistente']): ?>
@@ -117,13 +134,9 @@ $combustivelQueryBase = function (array $filters, array $extra = []): string {
                                 <?= $r['autonomia_media'] !== null ? number_format((float)$r['autonomia_media'], 2, ',', '.') . ' km/L' : '-,-- km/L' ?>
                             <?php endif; ?>
                         </td>
-                        <td class="px-3 py-3 whitespace-nowrap">
-                            <?= $r['custo'] !== null ? 'R$ ' . number_format((float)$r['custo'], 2, ',', '.') : '-' ?>
-                            <?php if ($r['valor_litro'] !== null): ?>
-                                <div class="text-xs text-slate-400">R$ <?= number_format((float)$r['valor_litro'], 2, ',', '.') ?>/L</div>
-                            <?php endif; ?>
-                        </td>
-                        <td class="px-3 py-3 whitespace-nowrap">
+                        <td data-col="valor_litro" class="px-3 py-3 whitespace-nowrap"><?= $r['valor_litro'] !== null ? 'R$ ' . number_format((float)$r['valor_litro'], 2, ',', '.') . '/L' : '-,--' ?></td>
+                        <td data-col="custo" class="px-3 py-3 whitespace-nowrap"><?= $r['custo'] !== null ? 'R$ ' . number_format((float)$r['custo'], 2, ',', '.') : '-' ?></td>
+                        <td data-col="anexo" class="px-3 py-3 whitespace-nowrap">
                             <?php foreach ($anexosByRecord[$r['id']] ?? [] as $i => $at): ?>
                                 <a class="text-blue-600 hover:underline" href="<?= sanitize(asset_url($at['file_path'])) ?>" target="_blank">📎<?= $i + 1 ?></a>
                             <?php endforeach; ?>
@@ -143,7 +156,7 @@ $combustivelQueryBase = function (array $filters, array $extra = []): string {
                     </tr>
                 <?php endforeach; ?>
                 <?php if (!$records): ?>
-                    <tr><td colspan="11" class="px-4 py-8 text-center text-slate-500">Nenhum abastecimento encontrado.</td></tr>
+                    <tr><td colspan="13" class="px-4 py-8 text-center text-slate-500">Nenhum abastecimento encontrado.</td></tr>
                 <?php endif; ?>
             </tbody>
         </table>
@@ -157,3 +170,66 @@ $combustivelQueryBase = function (array $filters, array $extra = []): string {
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    const STORAGE_KEY = 'abastecimentos_colunas_ocultas';
+    const btn = document.getElementById('colunas-btn');
+    const panel = document.getElementById('colunas-panel');
+    const countEl = document.getElementById('colunas-count');
+    const toggles = document.querySelectorAll('.colunas-toggle');
+
+    function ocultasSalvas() {
+        try {
+            return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function aplicarColuna(col, visivel) {
+        document.querySelectorAll('[data-col="' + col + '"]').forEach((el) => {
+            el.classList.toggle('hidden', !visivel);
+        });
+    }
+
+    function atualizarContador() {
+        const total = toggles.length;
+        const ativas = Array.from(toggles).filter((t) => t.checked).length;
+        countEl.textContent = ativas + '/' + total;
+    }
+
+    const ocultas = ocultasSalvas();
+    toggles.forEach((toggle) => {
+        const col = toggle.dataset.col;
+        const visivel = !ocultas.includes(col);
+        toggle.checked = visivel;
+        aplicarColuna(col, visivel);
+    });
+    atualizarContador();
+
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        panel.classList.toggle('hidden');
+    });
+    document.addEventListener('click', function(e) {
+        if (!panel.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+            panel.classList.add('hidden');
+        }
+    });
+
+    toggles.forEach((toggle) => {
+        toggle.addEventListener('change', function() {
+            aplicarColuna(this.dataset.col, this.checked);
+            atualizarContador();
+            const novasOcultas = Array.from(toggles).filter((t) => !t.checked).map((t) => t.dataset.col);
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(novasOcultas));
+            } catch (e) {
+                /* ignore */
+            }
+        });
+    });
+})();
+</script>
+
