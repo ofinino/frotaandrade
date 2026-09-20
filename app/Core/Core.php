@@ -358,11 +358,21 @@ function ensure_upload_dir(): string
     return $dir;
 }
 
+function detect_base_path(): string
+{
+    $script = $_SERVER['SCRIPT_NAME'] ?? '';
+    $dir = str_replace('\\', '/', dirname($script));
+    return ($dir === '/' || $dir === '.' || $dir === '') ? '' : rtrim($dir, '/');
+}
+
 function asset_url(string $path): string
 {
     global $config;
     $base = rtrim($config['base_url'] ?? '', '/');
+    if ($base === '') {
+        $base = detect_base_path();
+    }
     $cleanPath = ltrim($path, '/');
-    $prefix = $base ? $base . '/' : '/';
+    $prefix = $base !== '' ? $base . '/' : '/';
     return $prefix . $cleanPath;
 }

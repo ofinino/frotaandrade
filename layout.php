@@ -101,7 +101,7 @@ function render_header(string $title = 'Painel'): void
             })();
         </script>
         <script src="https://cdn.tailwindcss.com"></script>
-        <link href="assets/fonts/fonts.css" rel="stylesheet">
+        <link href="<?= sanitize(asset_url('assets/fonts/fonts.css')) ?>" rel="stylesheet">
         <style>
             /* Escopo experimental de design do modulo de Ordens de Servico.
                Nao afeta o resto do app - so ativa dentro de .app-redesign. */
@@ -115,6 +115,8 @@ function render_header(string $title = 'Painel'): void
                 --os-signal: #e2711d;
                 --os-line: #d8dde0;
                 font-family: 'Archivo', system-ui, sans-serif;
+                font-size: 14px;
+                line-height: 1.5;
                 color: var(--os-ink);
                 background: var(--os-paper);
             }
