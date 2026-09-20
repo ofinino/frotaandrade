@@ -273,6 +273,24 @@ html.os-agenda-lock .os-page-wrap {
 #os-kanban-grid .os-dropzone {
     overflow-y:auto;
 }
+/* Lista: mesma ideia - cabecalho da tabela fixo, só as linhas rolam. */
+#os-lista-view {
+    flex:1 1 auto;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+}
+#os-lista-view .table-responsive {
+    flex:1 1 auto;
+    min-height:0;
+    overflow-y:auto;
+}
+#os-lista-view thead th {
+    position:sticky;
+    top:0;
+    z-index:1;
+    background:#f8fafc;
+}
 .os-board-container {
     position: relative;
     flex:1 1 auto;
@@ -959,7 +977,7 @@ const CSRF_TOKEN = <?= json_encode(csrf_token()) ?>;
             btn.classList.toggle('btn-primary', active);
             btn.classList.toggle('btn-outline-secondary', !active);
         });
-        setPageScrollLock(view === 'agenda' || view === 'kanban');
+        setPageScrollLock(view === 'agenda' || view === 'kanban' || view === 'lista');
     }
 
     function setMode(mode) {
