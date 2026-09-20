@@ -1,5 +1,7 @@
 <?php
 $tanks = $tanks ?? [];
+$tanksAtivos = $tanksAtivos ?? [];
+$temHistorico = $temHistorico ?? [];
 $compras = $compras ?? [];
 $filters = $filters ?? [];
 ?>
@@ -40,12 +42,15 @@ $filters = $filters ?? [];
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-2">Em que tanque deseja adicionar combustível?</label>
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    <?php foreach ($tanks as $t): ?>
+                    <?php foreach ($tanksAtivos as $t): ?>
                         <label class="flex items-center gap-2 text-sm rounded-lg border border-slate-200 px-3 py-2">
                             <input type="radio" name="tank_id" value="<?= sanitize($t['id']) ?>" required>
                             <?= sanitize($t['nome']) ?>
                         </label>
                     <?php endforeach; ?>
+                    <?php if (!$tanksAtivos): ?>
+                        <span class="text-sm text-slate-500">Nenhum tanque ativo.</span>
+                    <?php endif; ?>
                 </div>
             </div>
             <button class="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Adicionar</button>
@@ -54,21 +59,38 @@ $filters = $filters ?? [];
 
     <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <?php foreach ($tanks as $t): ?>
-            <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-                <div class="flex items-start justify-between">
+            <?php $ativo = (bool)$t['ativo']; $comHistorico = $temHistorico[$t['id']] ?? false; ?>
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm <?= $ativo ? '' : 'opacity-60' ?>">
+                <div class="flex items-start justify-between gap-2">
                     <div class="font-semibold text-slate-800"><?= sanitize($t['nome']) ?></div>
-                    <?php if (has_permission('combustivel.manage')): ?>
-                        <form method="post" action="index.php?mod=combustivel&ctrl=Tanques&action=destroy" onsubmit="return confirm('Excluir este tanque?');">
-<?= csrf_field() ?>
-                            <input type="hidden" name="id" value="<?= sanitize($t['id']) ?>">
-                            <button class="text-xs text-red-500 hover:underline">Excluir</button>
-                        </form>
+                    <?php if (!$ativo): ?>
+                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-gray-200 text-gray-700">Inativo</span>
                     <?php endif; ?>
                 </div>
                 <div class="text-xs text-slate-500 mt-2">Estoque atual</div>
                 <div class="text-lg font-semibold text-slate-900"><?= number_format((float)$t['estoque_atual'], 1, '.', '') ?>/<?= number_format((float)$t['capacidade_maxima'], 2, ',', '.') ?> L</div>
                 <div class="text-xs text-slate-500 mt-2">Capacidade máxima</div>
                 <div class="text-sm text-slate-700"><?= number_format((float)$t['capacidade_maxima'], 2, ',', '.') ?> L</div>
+
+                <?php if (has_permission('combustivel.manage')): ?>
+                    <div class="mt-3 pt-3 border-t border-slate-100 flex items-center gap-3">
+                        <form method="post" action="index.php?mod=combustivel&ctrl=Tanques&action=toggleAtivo">
+<?= csrf_field() ?>
+                            <input type="hidden" name="id" value="<?= sanitize($t['id']) ?>">
+                            <input type="hidden" name="ativo" value="<?= $ativo ? '0' : '1' ?>">
+                            <button class="text-xs font-semibold text-blue-600 hover:underline"><?= $ativo ? 'Desativar' : 'Reativar' ?></button>
+                        </form>
+                        <?php if (!$comHistorico): ?>
+                            <form method="post" action="index.php?mod=combustivel&ctrl=Tanques&action=destroy" onsubmit="return confirm('Excluir este tanque?');">
+<?= csrf_field() ?>
+                                <input type="hidden" name="id" value="<?= sanitize($t['id']) ?>">
+                                <button class="text-xs text-red-500 hover:underline">Excluir</button>
+                            </form>
+                        <?php else: ?>
+                            <span class="text-xs text-slate-400" title="Tanque com compras ou abastecimentos registrados">Com histórico</span>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
             </div>
         <?php endforeach; ?>
         <?php if (!$tanks): ?>
@@ -88,20 +110,46 @@ $filters = $filters ?? [];
                     <th class="px-4 py-3 font-medium">Quantidade</th>
                     <th class="px-4 py-3 font-medium">Valor pago</th>
                     <th class="px-4 py-3 font-medium">Tanque</th>
+                    <th class="px-4 py-3 font-medium"></th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
                 <?php foreach ($compras as $c): ?>
-                    <tr>
+                    <tr id="compra-row-<?= sanitize($c['id']) ?>">
                         <td class="px-4 py-3"><?= sanitize(date('d/m/Y', strtotime($c['data']))) ?></td>
                         <td class="px-4 py-3"><?= sanitize($c['numero_nota'] ?? '-') ?></td>
                         <td class="px-4 py-3"><?= number_format((float)$c['quantidade'], 2, ',', '.') ?> L</td>
                         <td class="px-4 py-3">R$ <?= number_format((float)$c['valor_pago'], 2, ',', '.') ?></td>
                         <td class="px-4 py-3"><?= sanitize($c['tank_nome']) ?></td>
+                        <td class="px-4 py-3 text-right whitespace-nowrap">
+                            <?php if (has_permission('combustivel.manage')): ?>
+                                <button type="button" onclick="document.getElementById('compra-edit-<?= sanitize($c['id']) ?>').classList.toggle('hidden')" class="text-xs font-semibold text-blue-600 hover:underline">Editar</button>
+                                <form method="post" action="index.php?mod=combustivel&ctrl=Tanques&action=destroyPurchase" class="inline" onsubmit="return confirm('Excluir esta compra?');">
+<?= csrf_field() ?>
+                                    <input type="hidden" name="id" value="<?= sanitize($c['id']) ?>">
+                                    <button class="text-xs text-red-500 hover:underline ml-2">Excluir</button>
+                                </form>
+                            <?php endif; ?>
+                        </td>
                     </tr>
+                    <?php if (has_permission('combustivel.manage')): ?>
+                        <tr id="compra-edit-<?= sanitize($c['id']) ?>" class="hidden bg-slate-50">
+                            <td colspan="6" class="px-4 py-3">
+                                <form method="post" action="index.php?mod=combustivel&ctrl=Tanques&action=updatePurchase" class="grid grid-cols-1 md:grid-cols-5 gap-2 items-center">
+<?= csrf_field() ?>
+                                    <input type="hidden" name="id" value="<?= sanitize($c['id']) ?>">
+                                    <input class="rounded-lg border border-slate-200 px-3 py-2 text-sm" name="numero_nota" value="<?= sanitize($c['numero_nota'] ?? '') ?>" placeholder="Número da nota">
+                                    <input class="rounded-lg border border-slate-200 px-3 py-2 text-sm" name="data" type="date" value="<?= sanitize($c['data']) ?>" required>
+                                    <input class="rounded-lg border border-slate-200 px-3 py-2 text-sm" name="valor_pago" type="number" step="0.01" value="<?= sanitize($c['valor_pago']) ?>" placeholder="Valor pago (R$)">
+                                    <input class="rounded-lg border border-slate-200 px-3 py-2 text-sm" name="quantidade" type="number" step="0.01" value="<?= sanitize($c['quantidade']) ?>" placeholder="Quantidade (L)" required>
+                                    <button class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">Salvar</button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
                 <?php endforeach; ?>
                 <?php if (!$compras): ?>
-                    <tr><td colspan="5" class="px-4 py-8 text-center text-slate-500">Nenhuma compra registrada.</td></tr>
+                    <tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">Nenhuma compra registrada.</td></tr>
                 <?php endif; ?>
             </tbody>
         </table>

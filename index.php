@@ -34,7 +34,7 @@ if ($isAppHost || $hasAppParams) {
             'vencimentos_preventiva' => ['mod' => 'manutencao', 'ctrl' => 'PlanosPreventiva', 'action' => 'vencimentos', 'actions' => ['vencimentos']],
             'manutencao_servicos' => ['mod' => 'manutencao', 'ctrl' => 'ManutencaoServicos', 'action' => 'index', 'actions' => ['index', 'store', 'toggle']],
             'abastecimentos' => ['mod' => 'combustivel', 'ctrl' => 'Abastecimentos', 'action' => 'index', 'actions' => ['index', 'create', 'store', 'destroy']],
-            'meus_tanques' => ['mod' => 'combustivel', 'ctrl' => 'Tanques', 'action' => 'index', 'actions' => ['index', 'store', 'update', 'destroy', 'addPurchase']],
+            'meus_tanques' => ['mod' => 'combustivel', 'ctrl' => 'Tanques', 'action' => 'index', 'actions' => ['index', 'store', 'update', 'destroy', 'toggleAtivo', 'addPurchase', 'updatePurchase', 'destroyPurchase']],
         ];
 
         if (!isset($routes[$page])) {

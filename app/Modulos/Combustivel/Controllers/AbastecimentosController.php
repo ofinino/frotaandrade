@@ -68,7 +68,7 @@ class AbastecimentosController
             'title' => 'Novo Abastecimento',
             'veiculos' => $this->listarVeiculos(),
             'fornecedores' => $this->fornecedoresModel->listar(),
-            'tanks' => $this->tanksModel->listar(),
+            'tanks' => $this->tanksModel->listarAtivos(),
         ]);
     }
 
@@ -129,8 +129,9 @@ class AbastecimentosController
             $payload['custo'] = $_POST['custo'] ?? 0;
         } else {
             $tankId = (int)($_POST['tank_id'] ?? 0);
-            if (!$tankId) {
-                flash('error', 'Selecione o tanque de origem.');
+            $tank = $tankId ? $this->tanksModel->obter($tankId) : null;
+            if (!$tank || !$tank['ativo']) {
+                flash('error', 'Selecione um tanque de origem ativo.');
                 header('Location: index.php?mod=combustivel&ctrl=Abastecimentos&action=create');
                 return;
             }

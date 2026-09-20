@@ -25,9 +25,16 @@ class TanquesController
             'de' => $_GET['de'] ?? null,
             'ate' => $_GET['ate'] ?? null,
         ];
+        $tanks = $this->model->listar();
+        $temHistorico = [];
+        foreach ($tanks as $t) {
+            $temHistorico[$t['id']] = $this->model->temHistorico((int)$t['id']);
+        }
         View::render('Combustivel', 'tanques/index', [
             'title' => 'Meus Tanques',
-            'tanks' => $this->model->listar(),
+            'tanks' => $tanks,
+            'tanksAtivos' => $this->model->listarAtivos(),
+            'temHistorico' => $temHistorico,
             'compras' => $this->model->listarCompras($filters),
             'filters' => $filters,
         ]);
@@ -78,10 +85,82 @@ class TanquesController
             return;
         }
         $id = (int)($_POST['id'] ?? 0);
-        if ($this->model->excluir($id)) {
-            flash('success', 'Tanque excluido.');
+        try {
+            if ($this->model->excluir($id)) {
+                flash('success', 'Tanque excluido.');
+            } else {
+                flash('error', 'Nao foi possivel excluir o tanque.');
+            }
+        } catch (\RuntimeException $e) {
+            flash('error', $e->getMessage());
+        }
+        header('Location: index.php?page=meus_tanques');
+    }
+
+    public function toggleAtivo(): void
+    {
+        if (!has_permission('combustivel.manage')) {
+            flash('error', 'Sem permissao.');
+            header('Location: index.php?page=meus_tanques');
+            return;
+        }
+        $id = (int)($_POST['id'] ?? 0);
+        $ativo = !empty($_POST['ativo']);
+        if ($this->model->toggleAtivo($id, $ativo)) {
+            flash('success', $ativo ? 'Tanque reativado.' : 'Tanque desativado.');
         } else {
-            flash('error', 'Nao foi possivel excluir o tanque.');
+            flash('error', 'Nao foi possivel atualizar o tanque.');
+        }
+        header('Location: index.php?page=meus_tanques');
+    }
+
+    public function updatePurchase(): void
+    {
+        if (!has_permission('combustivel.manage')) {
+            flash('error', 'Sem permissao.');
+            header('Location: index.php?page=meus_tanques');
+            return;
+        }
+        $id = (int)($_POST['id'] ?? 0);
+        $quantidade = $_POST['quantidade'] ?? 0;
+        if (!$id || !is_numeric($quantidade) || (float)$quantidade <= 0) {
+            flash('error', 'Informe uma quantidade valida.');
+            header('Location: index.php?page=meus_tanques');
+            return;
+        }
+        try {
+            if ($this->model->atualizarCompra($id, [
+                'numero_nota' => $_POST['numero_nota'] ?? null,
+                'data' => $_POST['data'] ?? date('Y-m-d'),
+                'valor_pago' => $_POST['valor_pago'] ?? 0,
+                'quantidade' => $quantidade,
+            ])) {
+                flash('success', 'Compra atualizada.');
+            } else {
+                flash('error', 'Compra nao encontrada.');
+            }
+        } catch (\RuntimeException $e) {
+            flash('error', $e->getMessage());
+        }
+        header('Location: index.php?page=meus_tanques');
+    }
+
+    public function destroyPurchase(): void
+    {
+        if (!has_permission('combustivel.manage')) {
+            flash('error', 'Sem permissao.');
+            header('Location: index.php?page=meus_tanques');
+            return;
+        }
+        $id = (int)($_POST['id'] ?? 0);
+        try {
+            if ($this->model->excluirCompra($id)) {
+                flash('success', 'Compra excluida.');
+            } else {
+                flash('error', 'Compra nao encontrada.');
+            }
+        } catch (\RuntimeException $e) {
+            flash('error', $e->getMessage());
         }
         header('Location: index.php?page=meus_tanques');
     }
