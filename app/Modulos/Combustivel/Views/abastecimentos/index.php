@@ -2,6 +2,7 @@
 $records = $records ?? [];
 $veiculos = $veiculos ?? [];
 $filters = $filters ?? [];
+$anexosByRecord = $anexosByRecord ?? [];
 $combustivelLabels = [
     'alcool' => 'Álcool', 'arla32' => 'Arla 32', 'diesel' => 'Diesel',
     'diesel_s10' => 'Diesel S10', 'gasolina' => 'Gasolina', 'gasolina_aditivada' => 'Gasolina aditivada',
@@ -43,6 +44,7 @@ $combustivelLabels = [
                     <th class="px-3 py-3 font-medium whitespace-nowrap">Custo total</th>
                     <th class="px-3 py-3 font-medium whitespace-nowrap">Medida percorrida</th>
                     <th class="px-3 py-3 font-medium whitespace-nowrap">Autonomia média</th>
+                    <th class="px-3 py-3 font-medium whitespace-nowrap">Anexo</th>
                     <th class="px-3 py-3 font-medium whitespace-nowrap"></th>
                 </tr>
             </thead>
@@ -60,6 +62,14 @@ $combustivelLabels = [
                         <td class="px-3 py-3 whitespace-nowrap"><?= $r['medida_percorrida'] !== null ? number_format((float)$r['medida_percorrida'], 1, ',', '.') . ' km' : '-,-- km' ?></td>
                         <td class="px-3 py-3 whitespace-nowrap"><?= $r['autonomia_media'] !== null ? number_format((float)$r['autonomia_media'], 2, ',', '.') . ' km/L' : '-,-- km/L' ?></td>
                         <td class="px-3 py-3 whitespace-nowrap">
+                            <?php foreach ($anexosByRecord[$r['id']] ?? [] as $i => $at): ?>
+                                <a class="text-blue-600 hover:underline" href="<?= sanitize(asset_url($at['file_path'])) ?>" target="_blank">📎<?= $i + 1 ?></a>
+                            <?php endforeach; ?>
+                            <?php if (empty($anexosByRecord[$r['id']])): ?>
+                                <span class="text-slate-300">-</span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap">
                             <?php if (has_permission('combustivel.manage')): ?>
                                 <form method="post" action="index.php?mod=combustivel&ctrl=Abastecimentos&action=destroy" onsubmit="return confirm('Excluir este abastecimento?');">
 <?= csrf_field() ?>
@@ -71,7 +81,7 @@ $combustivelLabels = [
                     </tr>
                 <?php endforeach; ?>
                 <?php if (!$records): ?>
-                    <tr><td colspan="11" class="px-4 py-8 text-center text-slate-500">Nenhum abastecimento encontrado.</td></tr>
+                    <tr><td colspan="12" class="px-4 py-8 text-center text-slate-500">Nenhum abastecimento encontrado.</td></tr>
                 <?php endif; ?>
             </tbody>
         </table>

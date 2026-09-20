@@ -46,9 +46,12 @@ class AbastecimentosController
             'de' => $_GET['de'] ?? null,
             'ate' => $_GET['ate'] ?? null,
         ];
+        $records = $this->model->listar($filters);
+        $anexosByRecord = $this->model->listarAnexosPorRegistros(array_column($records, 'id'));
         View::render('Combustivel', 'abastecimentos/index', [
             'title' => 'Abastecimentos',
-            'records' => $this->model->listar($filters),
+            'records' => $records,
+            'anexosByRecord' => $anexosByRecord,
             'veiculos' => $this->listarVeiculos(),
             'filters' => $filters,
         ]);

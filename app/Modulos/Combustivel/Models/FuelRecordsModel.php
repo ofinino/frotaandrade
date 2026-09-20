@@ -21,7 +21,8 @@ class FuelRecordsModel
                     (SELECT r2.odometro FROM man_fuel_records r2
                      WHERE r2.veiculo_id = r.veiculo_id
                        AND (r2.data_hora < r.data_hora OR (r2.data_hora = r.data_hora AND r2.id < r.id))
-                     ORDER BY r2.data_hora DESC, r2.id DESC LIMIT 1) AS odometro_anterior
+                     ORDER BY r2.data_hora DESC, r2.id DESC LIMIT 1) AS odometro_anterior,
+                    (SELECT COUNT(*) FROM man_attachments a WHERE a.owner_type = 'abastecimento' AND a.owner_id = r.id) AS anexos_count
                 FROM man_fuel_records r
                 LEFT JOIN cad_veiculos v ON v.id = r.veiculo_id
                 LEFT JOIN cad_fornecedores f ON f.id = r.fornecedor_id
@@ -61,6 +62,24 @@ class FuelRecordsModel
         }
         unset($row);
         return $rows;
+    }
+
+    public function listarAnexosPorRegistros(array $ids): array
+    {
+        if (!$ids) {
+            return [];
+        }
+        $place = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->db->prepare(
+            "SELECT owner_id, file_path, original_name, mime_type FROM man_attachments
+             WHERE owner_type = 'abastecimento' AND owner_id IN ($place) ORDER BY uploaded_at ASC"
+        );
+        $stmt->execute($ids);
+        $byRecord = [];
+        foreach ($stmt as $row) {
+            $byRecord[(int)$row['owner_id']][] = $row;
+        }
+        return $byRecord;
     }
 
     public function obter(int $id): ?array
